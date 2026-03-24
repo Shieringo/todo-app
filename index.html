@@ -280,6 +280,7 @@ function scheduleSave(){
 function initGoogleAuth(){
   tokenClient=google.accounts.oauth2.initTokenClient({
     client_id:CLIENT_ID,scope:SCOPES,
+    prompt:'',
     callback:(response)=>{
       if(response.error)return;
       accessToken=response.access_token;
@@ -481,6 +482,9 @@ window.addEventListener('load',()=>{
       document.getElementById('loginScreen').style.display='none';
       document.getElementById('app').style.display='block';
       findOrCreateFile();
+    }
+  } else {
+      tokenClient.requestAccessToken({prompt:''});
     }
   } else {
     document.getElementById('loginBtn').onclick=()=>alert('Google APIの読み込みに失敗しました。');
