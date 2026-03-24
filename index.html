@@ -283,6 +283,8 @@ function initGoogleAuth(){
     callback:(response)=>{
       if(response.error)return;
       accessToken=response.access_token;
+      localStorage.setItem('gd_access_token',accessToken);
+      localStorage.setItem('gd_token_expiry',Date.now()+(3500*1000));
       document.getElementById('loginScreen').style.display='none';
       document.getElementById('app').style.display='block';
       findOrCreateFile();
@@ -470,8 +472,19 @@ setupColResize('nameResizeHandle',()=>NAME_W,w=>{NAME_W=w;},120,360);
 setupColResize('assigneeResizeHandle',()=>ASSIGNEE_W,w=>{ASSIGNEE_W=w;},70,200);
 
 window.addEventListener('load',()=>{
-  if(typeof google!=='undefined')initGoogleAuth();
-  else document.getElementById('loginBtn').onclick=()=>alert('Google APIの読み込みに失敗しました。');
+  if(typeof google!=='undefined'){
+    initGoogleAuth();
+    const savedToken=localStorage.getItem('gd_access_token');
+    const savedExpiry=localStorage.getItem('gd_token_expiry');
+    if(savedToken&&savedExpiry&&Date.now()<parseInt(savedExpiry)){
+      accessToken=savedToken;
+      document.getElementById('loginScreen').style.display='none';
+      document.getElementById('app').style.display='block';
+      findOrCreateFile();
+    }
+  } else {
+    document.getElementById('loginBtn').onclick=()=>alert('Google APIの読み込みに失敗しました。');
+  }
 });
 </script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
