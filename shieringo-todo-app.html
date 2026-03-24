@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gantt Todo App</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#f8f7f4;color:#1a1a1a;font-size:14px;}
+#app{padding:1rem;}
+.toolbar{display:flex;gap:8px;margin-bottom:1rem;align-items:center;flex-wrap:wrap;}
+.btn{font-size:13px;padding:5px 12px;border-radius:6px;border:0.5px solid #ccc;background:#fff;color:#1a1a1a;cursor:pointer;}
+.btn:hover{background:#f0f0f0;}
+.btn.primary{background:#185FA5;color:#E6F1FB;border-color:#185FA5;}
+.btn.primary:hover{background:#0C447C;}
+.btn.sm{font-size:12px;padding:4px 10px;}
+.btn.danger{background:#fff;color:#A32D2D;border-color:#F09595;}
+.btn.danger:hover{background:#FCEBEB;}
+.btn.success{background:#185FA5;color:#fff;border-color:#185FA5;}
+.sync-status{font-size:12px;padding:4px 10px;border-radius:6px;border:0.5px solid #ccc;background:#fff;color:#888;display:flex;align-items:center;gap:6px;}
+.sync-status.synced{color:#3B6D11;border-color:#97C459;background:#EAF3DE;}
+.sync-status.syncing{color:#854F0B;border-color:#EF9F27;background:#FAEEDA;}
+.sync-status.error{color:#A32D2D;border-color:#F09595;background:#FCEBEB;}
+.status-legend{display:flex;gap:10px;font-size:12px;color:#666;align-items:center;margin-left:auto;flex-wrap:wrap;}
+.legend-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:3px;}
+.legend-diamond{width:7px;height:7px;display:inline-block;margin-right:3px;transform:rotate(45deg);background:#E24B4A;vertical-align:middle;position:relative;top:-1px;}
+.main-layout{display:flex;gap:0;align-items:flex-start;}
+.todo-side{width:260px;min-width:220px;flex-shrink:0;border-right:0.5px solid #ddd;padding-right:14px;margin-right:14px;}
+.gantt-side{flex:1;min-width:0;overflow:hidden;}
+.gantt-wrap{overflow-x:auto;}
+.gantt{width:max-content;min-width:100%;}
+.gantt-header{display:flex;border-bottom:0.5px solid #ddd;}
+.col-header{padding:8px 10px;font-size:12px;color:#666;font-weight:500;border-right:0.5px solid #ddd;display:flex;align-items:center;justify-content:space-between;user-select:none;position:relative;flex-shrink:0;background:#fafaf8;}
+.date-header{display:flex;}
+.date-cell{width:34px;text-align:center;font-size:10px;color:#999;padding:8px 0;border-right:0.5px solid #ddd;cursor:pointer;background:#fafaf8;flex-shrink:0;}
+.date-cell:hover{background:#f0f0f0;}
+.date-cell.today{color:#185FA5;font-weight:500;}
+.date-cell.selected-date{background:#E6F1FB;color:#185FA5;}
+.gantt-row{display:flex;border-bottom:0.5px solid #eee;align-items:center;min-height:40px;background:#fff;}
+.gantt-row:hover{background:#fafaf8;}
+.gantt-row.child-row{background:#fdfcfb;}
+.gantt-row.child-row:hover{background:#f5f5f2;}
+.name-col{padding:4px 8px;border-right:0.5px solid #eee;display:flex;align-items:center;gap:4px;overflow:hidden;flex-shrink:0;}
+.assignee-col{padding:4px 8px;border-right:0.5px solid #eee;display:flex;align-items:center;overflow:hidden;flex-shrink:0;}
+.assignee-text{font-size:12px;color:#666;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;}
+.toggle-btn{width:15px;height:15px;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:3px;border:none;background:none;color:#999;font-size:10px;padding:0;transition:transform 0.15s;}
+.toggle-btn:hover{background:#eee;}
+.toggle-btn.collapsed{transform:rotate(-90deg);}
+.toggle-placeholder{width:15px;flex-shrink:0;}
+.indent{width:14px;flex-shrink:0;}
+.task-status-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.task-name{font-size:12px;color:#1a1a1a;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;}
+.task-name.parent-name{font-weight:500;}
+.task-actions{display:flex;gap:2px;flex-shrink:0;margin-left:2px;}
+.task-actions button{background:none;border:none;cursor:pointer;font-size:11px;color:#999;padding:2px 3px;border-radius:3px;}
+.task-actions button:hover{background:#eee;color:#333;}
+.grid-area{position:relative;display:flex;align-items:center;min-height:40px;}
+.grid-col{width:34px;height:40px;border-right:0.5px solid #eee;flex-shrink:0;}
+.grid-col.today-col{background:rgba(24,95,165,0.04);}
+.grid-col.sel-col{background:rgba(24,95,165,0.07);}
+.bar-container{position:absolute;top:7px;height:24px;border-radius:4px;cursor:grab;display:flex;align-items:center;padding:0 7px;font-size:11px;font-weight:500;user-select:none;z-index:2;overflow:visible;}
+.bar-container.child-bar{top:9px;height:20px;border-radius:3px;}
+.bar-container:active{cursor:grabbing;}
+.resize-handle{position:absolute;right:0;top:0;width:5px;height:100%;cursor:ew-resize;border-radius:0 4px 4px 0;}
+.deadline-diamond{position:absolute;right:-6px;top:50%;transform:translateY(-50%) rotate(45deg);width:10px;height:10px;background:#E24B4A;border:1.5px solid #791F1F;border-radius:1px;z-index:4;pointer-events:none;}
+.bar-container.child-bar .deadline-diamond{width:8px;height:8px;right:-5px;}
+.parent-bar-bg{position:absolute;top:3px;height:32px;border-radius:4px;z-index:1;pointer-events:none;}
+.col-resize-handle{width:6px;cursor:col-resize;position:absolute;right:0;top:0;height:100%;display:flex;align-items:center;justify-content:center;color:#ccc;font-size:10px;z-index:10;}
+.col-resize-handle:hover{background:#eee;}
+.todo-side h2{font-size:14px;font-weight:500;color:#1a1a1a;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.todo-date-label{font-size:12px;color:#888;font-weight:400;}
+.todo-section{margin-bottom:14px;}
+.todo-section-title{font-size:11px;font-weight:500;color:#888;letter-spacing:.04em;margin-bottom:6px;padding-bottom:4px;border-bottom:0.5px solid #eee;}
+.todo-item{display:flex;align-items:center;gap:5px;padding:5px 6px;border-radius:6px;margin-bottom:2px;}
+.todo-item:hover{background:#f5f5f2;}
+.todo-item.done-item .todo-text{text-decoration:line-through;color:#bbb;}
+.todo-item.done-item .todo-assignee{text-decoration:line-through;color:#bbb;}
+.todo-cb{flex-shrink:0;width:14px;height:14px;cursor:pointer;accent-color:#185FA5;}
+.priority-badge{flex-shrink:0;width:18px;height:18px;border-radius:4px;font-size:11px;font-weight:500;display:flex;align-items:center;justify-content:center;cursor:pointer;border:0.5px solid transparent;}
+.priority-badge.pA{background:#FCEBEB;color:#A32D2D;border-color:#F09595;}
+.priority-badge.pB{background:#FAEEDA;color:#854F0B;border-color:#EF9F27;}
+.priority-badge.pC{background:#E6F1FB;color:#185FA5;border-color:#85B7EB;}
+.priority-badge.pD{background:#F1EFE8;color:#5F5E5A;border-color:#B4B2A9;}
+.priority-badge.pNone{background:#f0f0f0;color:#bbb;border-color:#ddd;}
+.todo-body{flex:1;min-width:0;}
+.todo-text{font-size:12px;color:#1a1a1a;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.todo-assignee{font-size:10px;color:#888;display:block;}
+.todo-meta{font-size:10px;color:#bbb;flex-shrink:0;}
+.todo-del{background:none;border:none;cursor:pointer;font-size:11px;color:#bbb;padding:1px 3px;border-radius:3px;opacity:0;flex-shrink:0;}
+.todo-item:hover .todo-del{opacity:1;}
+.todo-del:hover{background:#eee;}
+.todo-add-row{display:flex;gap:6px;margin-top:8px;}
+.todo-add-row input{flex:1;font-size:12px;padding:5px 8px;border:0.5px solid #ccc;border-radius:6px;background:#fff;color:#1a1a1a;}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;z-index:200;}
+.modal{background:#fff;border-radius:10px;border:0.5px solid #ddd;padding:1.5rem;width:340px;max-width:90vw;max-height:90vh;overflow-y:auto;box-shadow:0 4px 24px rgba(0,0,0,0.12);}
+.modal h3{font-size:15px;font-weight:500;margin-bottom:1rem;color:#1a1a1a;}
+.form-row{margin-bottom:10px;}
+.form-row label{font-size:12px;color:#666;display:block;margin-bottom:3px;}
+.form-row input,.form-row select{width:100%;padding:7px 10px;border:0.5px solid #ccc;border-radius:6px;background:#fff;color:#1a1a1a;font-size:13px;}
+.form-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:14px;}
+#loginScreen{display:flex;align-items:center;justify-content:center;min-height:80vh;flex-direction:column;gap:16px;}
+#loginScreen h1{font-size:22px;font-weight:500;color:#1a1a1a;}
+#loginScreen p{font-size:14px;color:#888;text-align:center;max-width:320px;line-height:1.6;}
+</style>
+</head>
+<body>
+<div id="loginScreen">
+  <h1>Gantt Todo App</h1>
+  <p>Googleドライブと同期してデータを保存します。<br>ログインして始めてください。</p>
+  <button class="btn primary" id="loginBtn" style="font-size:14px;padding:10px 24px;">Googleでログイン</button>
+</div>
+<div id="app" style="display:none;">
+  <div class="toolbar">
+    <button class="btn primary" id="addParentBtn">+ 親タスク</button>
+    <button class="btn" id="addRoutineBtn">+ ルーティン</button>
+    <div id="syncStatus" class="sync-status">● 未接続</div>
+    <button class="btn sm" id="forceSaveBtn" title="今すぐ保存">保存</button>
+    <div class="status-legend">
+      <span><span class="legend-dot" style="background:#378ADD"></span>未着手</span>
+      <span><span class="legend-dot" style="background:#639922"></span>進行中</span>
+      <span><span class="legend-dot" style="background:#888780"></span>完了</span>
+      <span><span class="legend-diamond"></span>締め切り</span>
+    </div>
+  </div>
+  <div class="main-layout">
+    <div class="todo-side">
+      <h2>TODO <span class="todo-date-label" id="todoDateLabel"></span></h2>
+      <div id="todoContent"></div>
+    </div>
+    <div class="gantt-side">
+      <div class="gantt-wrap">
+        <div class="gantt">
+          <div class="gantt-header">
+            <div class="col-header" id="nameHeader">
+              <span>タスク</span>
+              <div class="col-resize-handle" id="nameResizeHandle" title="幅を調整">⠿</div>
+            </div>
+            <div class="col-header" id="assigneeHeader">
+              <span>担当者</span>
+              <div class="col-resize-handle" id="assigneeResizeHandle" title="幅を調整">⠿</div>
+            </div>
+            <div class="date-header" id="dateHeader"></div>
+          </div>
+          <div id="ganttRows"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="modalContainer"></div>
+
+<script>
+const CLIENT_ID = '601672608883-osv2bk6af0c0gviimhd816j9jilo38mm.apps.googleusercontent.com';
+const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+const FILE_NAME = 'gantt-todo-data.json';
+const COL_W=34,DAYS=60;
+const SC={todo:'#378ADD',doing:'#639922',done:'#888780'};
+const SB={todo:'#E6F1FB',doing:'#EAF3DE',done:'#F1EFE8'};
+const ST={todo:'#185FA5',doing:'#3B6D11',done:'#5F5E5A'};
+const PRIORITIES=['A','B','C','D',''];
+const today=new Date();today.setHours(0,0,0,0);
+const START=new Date(today);START.setDate(START.getDate()-14);
+
+let NAME_W=200,ASSIGNEE_W=100;
+let tokenClient,accessToken=null,driveFileId=null;
+let saveTimer=null,lastSaved=null;
+
+function addD(d,n){const r=new Date(d);r.setDate(r.getDate()+n);return r;}
+function diff(a,b){return Math.round((b-a)/86400000);}
+function iso(d){return d.toISOString().split('T')[0];}
+function colOf(s){const d=new Date(s);d.setHours(0,0,0,0);return Math.max(0,Math.min(DAYS-1,diff(START,d)));}
+function fmtDate(s){const d=new Date(s);return(d.getMonth()+1)+'/'+d.getDate()+'('+['日','月','火','水','木','金','土'][d.getDay()]+')';}
+
+const dates=Array.from({length:DAYS},(_,i)=>addD(START,i));
+let nid=10,ntodoid=100,collapsed={},selectedDate=iso(today);
+
+let tasks=[];
+let routines=[];
+let todoItems=[];
+let doneMap={};
+
+function defaultData(){
+  tasks=[
+    {id:1,name:'サンプル：調査',start:iso(addD(today,-5)),end:iso(addD(today,2)),status:'doing',parentId:null,dep:null,deadline:false,assignee:''},
+  ];
+  routines=[
+    {id:1,name:'メールチェック・返信',freq:'daily',dow:null,dom:null,priority:''},
+    {id:2,name:'週次レビュー',freq:'weekly',dow:1,dom:null,priority:''},
+  ];
+  todoItems=[];doneMap={};nid=10;ntodoid=100;
+}
+
+function getParents(){return tasks.filter(t=>t.parentId===null);}
+function getChildren(pid){return tasks.filter(t=>t.parentId===pid);}
+function getTask(id){return tasks.find(t=>t.id===id);}
+function isRoutineActive(r,s){const d=new Date(s);if(r.freq==='daily')return true;if(r.freq==='weekly')return d.getDay()===r.dow;if(r.freq==='monthly')return d.getDate()===r.dom;return false;}
+function getTasksForDate(s){return tasks.filter(t=>{const a=new Date(t.start),b=new Date(t.end),d=new Date(s);a.setHours(0,0,0,0);b.setHours(0,0,0,0);d.setHours(0,0,0,0);return d>=a&&d<=b;});}
+function getDeadlinesForDate(s){return tasks.filter(t=>t.deadline&&t.end===s);}
+function getManualTodosForDate(s){return todoItems.filter(t=>t.date===s);}
+function getRoutinesForDate(s){return routines.filter(r=>isRoutineActive(r,s));}
+function getDoneKey(type,id,date){return type+':'+id+':'+date;}
+
+// Google Drive
+function setSyncStatus(state,msg){
+  const el=document.getElementById('syncStatus');
+  el.className='sync-status'+( state==='synced'?' synced':state==='syncing'?' syncing':state==='error'?' error':'');
+  el.textContent='● '+msg;
+}
+
+function serializeData(){
+  return JSON.stringify({tasks,routines,todoItems,doneMap,nid,ntodoid,collapsed,selectedDate},null,2);
+}
+
+function deserializeData(json){
+  try{
+    const d=JSON.parse(json);
+    tasks=d.tasks||[];routines=d.routines||[];todoItems=d.todoItems||[];
+    doneMap=d.doneMap||{};nid=d.nid||100;ntodoid=d.ntodoid||100;
+    collapsed=d.collapsed||{};selectedDate=d.selectedDate||iso(today);
+    return true;
+  }catch(e){return false;}
+}
+
+async function findOrCreateFile(){
+  setSyncStatus('syncing','検索中...');
+  const res=await fetch(`https://www.googleapis.com/drive/v3/files?q=name='${FILE_NAME}'+and+trashed=false&fields=files(id,name)`,{headers:{Authorization:'Bearer '+accessToken}});
+  const data=await res.json();
+  if(data.files&&data.files.length>0){
+    driveFileId=data.files[0].id;
+    await loadFromDrive();
+  } else {
+    await createDriveFile();
+  }
+}
+
+async function loadFromDrive(){
+  setSyncStatus('syncing','読み込み中...');
+  try{
+    const res=await fetch(`https://www.googleapis.com/drive/v3/files/${driveFileId}?alt=media`,{headers:{Authorization:'Bearer '+accessToken}});
+    const text=await res.text();
+    if(deserializeData(text)){
+      setSyncStatus('synced','同期済み');
+      renderAll();
+    }
+  }catch(e){setSyncStatus('error','読み込み失敗');}
+}
+
+async function createDriveFile(){
+  setSyncStatus('syncing','ファイル作成中...');
+  defaultData();
+  const meta=JSON.stringify({name:FILE_NAME,mimeType:'application/json'});
+  const body=serializeData();
+  const form=new FormData();
+  form.append('metadata',new Blob([meta],{type:'application/json'}));
+  form.append('file',new Blob([body],{type:'application/json'}));
+  const res=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',{method:'POST',headers:{Authorization:'Bearer '+accessToken},body:form});
+  const data=await res.json();
+  driveFileId=data.id;
+  setSyncStatus('synced','同期済み（新規）');
+  renderAll();
+}
+
+async function saveToDrive(){
+  if(!driveFileId||!accessToken)return;
+  setSyncStatus('syncing','保存中...');
+  try{
+    const body=serializeData();
+    await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`,{method:'PATCH',headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},body});
+    setSyncStatus('synced','保存済み '+new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}));
+  }catch(e){setSyncStatus('error','保存失敗');}
+}
+
+function scheduleSave(){
+  if(saveTimer)clearTimeout(saveTimer);
+  saveTimer=setTimeout(()=>saveToDrive(),2000);
+}
+
+// Auth
+function initGoogleAuth(){
+  tokenClient=google.accounts.oauth2.initTokenClient({
+    client_id:CLIENT_ID,scope:SCOPES,
+    callback:(response)=>{
+      if(response.error)return;
+      accessToken=response.access_token;
+      document.getElementById('loginScreen').style.display='none';
+      document.getElementById('app').style.display='block';
+      findOrCreateFile();
+    }
+  });
+}
+
+document.getElementById('loginBtn').onclick=()=>{
+  if(typeof google==='undefined'){alert('Google APIの読み込みに失敗しました。ページを再読み込みしてください。');return;}
+  tokenClient.requestAccessToken();
+};
+
+document.getElementById('forceSaveBtn').onclick=()=>{
+  if(saveTimer)clearTimeout(saveTimer);
+  saveToDrive();
+};
+
+// Render
+function applyColWidths(){
+  document.getElementById('nameHeader').style.width=NAME_W+'px';
+  document.getElementById('assigneeHeader').style.width=ASSIGNEE_W+'px';
+  document.querySelectorAll('.name-col').forEach(el=>el.style.width=NAME_W+'px');
+  document.querySelectorAll('.assignee-col').forEach(el=>el.style.width=ASSIGNEE_W+'px');
+}
+
+function setupColResize(handleId,getW,setW,min,max){
+  const handle=document.getElementById(handleId);
+  let dragging=false,startX=0,startW=0;
+  handle.addEventListener('mousedown',e=>{e.preventDefault();dragging=true;startX=e.clientX;startW=getW();document.body.style.cursor='col-resize';document.addEventListener('mousemove',onM);document.addEventListener('mouseup',onU);});
+  function onM(e){if(!dragging)return;setW(Math.max(min,Math.min(max,startW+(e.clientX-startX))));applyColWidths();}
+  function onU(){dragging=false;document.body.style.cursor='';document.removeEventListener('mousemove',onM);document.removeEventListener('mouseup',onU);}
+}
+
+function renderTodo(){
+  document.getElementById('todoDateLabel').textContent=fmtDate(selectedDate);
+  const content=document.getElementById('todoContent');content.innerHTML='';
+  const deadlines=getDeadlinesForDate(selectedDate);
+  const activeTasks=getTasksForDate(selectedDate);
+  const manuals=getManualTodosForDate(selectedDate);
+  const activeRoutines=getRoutinesForDate(selectedDate);
+
+  function makePriorityBadge(priority,type,id){
+    const badge=document.createElement('div');const p=priority||'';
+    badge.className='priority-badge p'+(p||'None');badge.textContent=p||'–';badge.title='優先度を変更';
+    badge.onclick=()=>{const idx=PRIORITIES.indexOf(p);const next=PRIORITIES[(idx+1)%PRIORITIES.length];if(type==='task'){const t=getTask(id);if(t)t.priority=next;}else if(type==='routine'){const r=routines.find(x=>x.id===id);if(r)r.priority=next;}else if(type==='manual'){const m=todoItems.find(x=>x.id===id);if(m)m.priority=next;}renderTodo();scheduleSave();};
+    return badge;
+  }
+  function makeTodoItem(text,doneKey,priority,type,id,meta,assignee){
+    const item=document.createElement('div');const done=!!doneMap[doneKey];
+    item.className='todo-item'+(done?' done-item':'');
+    const cb=document.createElement('input');cb.type='checkbox';cb.className='todo-cb';cb.checked=done;cb.onchange=()=>{doneMap[doneKey]=cb.checked;renderTodo();scheduleSave();};
+    const badge=makePriorityBadge(priority,type,id);
+    const body=document.createElement('div');body.className='todo-body';
+    const span=document.createElement('span');span.className='todo-text';span.textContent=text;body.appendChild(span);
+    if(assignee){const at=document.createElement('span');at.className='todo-assignee';at.textContent='担当：'+assignee;body.appendChild(at);}
+    item.append(cb,badge,body);
+    if(meta){const m=document.createElement('span');m.className='todo-meta';m.textContent=meta;item.appendChild(m);}
+    if(type==='manual'){const del=document.createElement('button');del.className='todo-del';del.textContent='✕';del.onclick=()=>{todoItems=todoItems.filter(x=>x.id!==id);renderTodo();scheduleSave();};item.appendChild(del);}
+    return item;
+  }
+  if(deadlines.length>0){const sec=document.createElement('div');sec.className='todo-section';const t=document.createElement('div');t.className='todo-section-title';t.textContent='締め切り';sec.appendChild(t);deadlines.forEach(task=>sec.appendChild(makeTodoItem('◆ '+task.name,getDoneKey('dl',task.id,selectedDate),task.priority,'task',task.id,'締切',task.assignee)));content.appendChild(sec);}
+  const nonDL=activeTasks.filter(t=>!(t.deadline&&t.end===selectedDate));
+  if(nonDL.length>0){const sec=document.createElement('div');sec.className='todo-section';const t=document.createElement('div');t.className='todo-section-title';t.textContent='進行中のタスク';sec.appendChild(t);nonDL.forEach(task=>{const meta=task.end===selectedDate?'今日まで':'~'+fmtDate(task.end);sec.appendChild(makeTodoItem(task.name,getDoneKey('task',task.id,selectedDate),task.priority,'task',task.id,meta,task.assignee));});content.appendChild(sec);}
+  if(activeRoutines.length>0){const sec=document.createElement('div');sec.className='todo-section';const t=document.createElement('div');t.className='todo-section-title';t.textContent='ルーティン';sec.appendChild(t);const fl={daily:'毎日',weekly:'毎週',monthly:'毎月'};activeRoutines.forEach(r=>sec.appendChild(makeTodoItem(r.name,getDoneKey('routine',r.id,selectedDate),r.priority,'routine',r.id,fl[r.freq],'')));content.appendChild(sec);}
+  const manualSec=document.createElement('div');manualSec.className='todo-section';const mt=document.createElement('div');mt.className='todo-section-title';mt.textContent='手動追加';manualSec.appendChild(mt);
+  manuals.forEach(m=>manualSec.appendChild(makeTodoItem(m.name,getDoneKey('manual',m.id,selectedDate),m.priority,'manual',m.id,'',m.assignee||'')));
+  const addRow=document.createElement('div');addRow.className='todo-add-row';
+  const inp=document.createElement('input');inp.placeholder='+ TODO を追加...';inp.id='todoInput';
+  const addBtn=document.createElement('button');addBtn.className='btn sm';addBtn.textContent='追加';
+  function addManual(){const v=inp.value.trim();if(!v)return;todoItems.push({id:ntodoid++,name:v,date:selectedDate,priority:'',assignee:''});inp.value='';renderTodo();scheduleSave();setTimeout(()=>{const el=document.getElementById('todoInput');if(el)el.focus();},0);}
+  addBtn.onclick=addManual;inp.onkeydown=e=>{if(e.key==='Enter')addManual();};
+  addRow.append(inp,addBtn);manualSec.appendChild(addRow);content.appendChild(manualSec);
+}
+
+function renderHeader(){
+  const h=document.getElementById('dateHeader');h.innerHTML='';
+  dates.forEach((d,i)=>{const c=document.createElement('div');c.className='date-cell'+(diff(today,d)===0?' today':'')+(iso(d)===selectedDate?' selected-date':'');c.textContent=(d.getDate()===1||i===0)?(d.getMonth()+1)+'/'+d.getDate():d.getDate();c.onclick=()=>{selectedDate=iso(d);renderHeader();renderRows();renderTodo();scheduleSave();};h.appendChild(c);});
+}
+
+function parentSpan(pid){const ch=getChildren(pid);const p=getTask(pid);if(!ch.length)return{start:p.start,end:p.end};return{start:iso(new Date(Math.min(...[p,...ch].map(t=>+new Date(t.start))))),end:iso(new Date(Math.max(...[p,...ch].map(t=>+new Date(t.end)))))};}
+
+function makeBar(task,isChild){
+  const sc=colOf(task.start),ec=colOf(task.end);
+  const bar=document.createElement('div');bar.className='bar-container'+(isChild?' child-bar':'');
+  bar.style.left=(sc*COL_W)+'px';bar.style.width=Math.max(COL_W,(ec-sc+1)*COL_W)+'px';
+  bar.style.background=SB[task.status];bar.style.color=ST[task.status];bar.style.border='0.5px solid '+SC[task.status];
+  bar.appendChild(document.createTextNode(task.name.length>13?task.name.slice(0,11)+'…':task.name));
+  const rh=document.createElement('div');rh.className='resize-handle';rh.style.background=SC[task.status]+'44';bar.appendChild(rh);
+  if(task.deadline){const d=document.createElement('div');d.className='deadline-diamond';d.title='締め切り：'+task.end;bar.appendChild(d);}
+  setupBarDrag(bar,task,rh);return bar;
+}
+
+function makeParentBg(pid){const span=parentSpan(pid);const sc=colOf(span.start),ec=colOf(span.end);const bg=document.createElement('div');bg.className='parent-bar-bg';bg.style.left=(sc*COL_W)+'px';bg.style.width=Math.max(COL_W,(ec-sc+1)*COL_W)+'px';bg.style.background='rgba(55,138,221,0.07)';bg.style.border='0.5px dashed rgba(55,138,221,0.3)';return bg;}
+
+function renderRows(){
+  const container=document.getElementById('ganttRows');container.innerHTML='';
+  const todayCol=diff(START,today);const selCol=colOf(selectedDate);
+  function makeGridArea(){const g=document.createElement('div');g.className='grid-area';g.style.width=(DAYS*COL_W)+'px';dates.forEach((_,i)=>{const col=document.createElement('div');col.className='grid-col'+(i===todayCol?' today-col':'')+(i===selCol?' sel-col':'');g.appendChild(col);});return g;}
+  function makeNameCol(task,isChild){
+    const col=document.createElement('div');col.className='name-col';col.style.width=NAME_W+'px';
+    if(isChild){const ind=document.createElement('span');ind.className='indent';col.appendChild(ind);const sp=document.createElement('span');sp.className='toggle-placeholder';col.appendChild(sp);}
+    else{const children=getChildren(task.id);const isCollapsed=!!collapsed[task.id];const tb=document.createElement('button');tb.className='toggle-btn'+(isCollapsed?' collapsed':'');tb.innerHTML='&#9660;';if(children.length===0)tb.style.visibility='hidden';tb.onclick=()=>{collapsed[task.id]=!collapsed[task.id];renderRows();scheduleSave();};col.appendChild(tb);}
+    const dot=document.createElement('span');dot.className='task-status-dot';dot.style.background=SC[task.status];col.appendChild(dot);
+    const nm=document.createElement('span');nm.className='task-name'+(isChild?'':' parent-name');nm.textContent=task.name;nm.title=task.name;nm.onclick=()=>openTaskModal(task.id,isChild);col.appendChild(nm);
+    const acts=document.createElement('div');acts.className='task-actions';
+    if(!isChild){const ab=document.createElement('button');ab.textContent='+';ab.title='子タスク追加';ab.onclick=e=>{e.stopPropagation();openTaskModal(null,true,task.id);};acts.appendChild(ab);}
+    const eb=document.createElement('button');eb.textContent='✎';eb.onclick=e=>{e.stopPropagation();openTaskModal(task.id,isChild);};
+    const db=document.createElement('button');db.textContent='✕';db.onclick=e=>{e.stopPropagation();deleteTask(task.id);};
+    acts.append(eb,db);col.appendChild(acts);return col;
+  }
+  function makeAssigneeCol(task){const col=document.createElement('div');col.className='assignee-col';col.style.width=ASSIGNEE_W+'px';const txt=document.createElement('span');txt.className='assignee-text';txt.textContent=task.assignee||'';txt.title=task.assignee||'';col.appendChild(txt);return col;}
+  getParents().forEach(parent=>{
+    const children=getChildren(parent.id);const isCollapsed=!!collapsed[parent.id];
+    const row=document.createElement('div');row.className='gantt-row';
+    const g=makeGridArea();if(children.length>0)g.appendChild(makeParentBg(parent.id));g.appendChild(makeBar(parent,false));
+    row.append(makeNameCol(parent,false),makeAssigneeCol(parent),g);container.appendChild(row);
+    if(!isCollapsed){children.forEach(child=>{const crow=document.createElement('div');crow.className='gantt-row child-row';const cg=makeGridArea();cg.appendChild(makeBar(child,true));crow.append(makeNameCol(child,true),makeAssigneeCol(child),cg);container.appendChild(crow);});}
+  });
+}
+
+function setupBarDrag(bar,task,handle){
+  let dragging=false,resizing=false,startX=0,os=0,oe=0;
+  handle.addEventListener('mousedown',e=>{e.stopPropagation();resizing=true;startX=e.clientX;oe=colOf(task.end);document.addEventListener('mousemove',onM);document.addEventListener('mouseup',onU);});
+  bar.addEventListener('mousedown',e=>{if(e.target===handle||e.target.classList.contains('deadline-diamond'))return;dragging=true;startX=e.clientX;os=colOf(task.start);oe=colOf(task.end);document.addEventListener('mousemove',onM);document.addEventListener('mouseup',onU);});
+  function onM(e){const dx=Math.round((e.clientX-startX)/COL_W);if(resizing){const ne=Math.max(colOf(task.start),oe+dx);task.end=iso(addD(START,ne));bar.style.width=Math.max(COL_W,(ne-colOf(task.start)+1)*COL_W)+'px';}else if(dragging){const dur=oe-os,ns=os+dx,ne2=ns+dur;if(ns>=0&&ne2<DAYS){task.start=iso(addD(START,ns));task.end=iso(addD(START,ne2));bar.style.left=(ns*COL_W)+'px';}}renderTodo();scheduleSave();}
+  function onU(){dragging=false;resizing=false;document.removeEventListener('mousemove',onM);document.removeEventListener('mouseup',onU);}
+}
+
+function deleteTask(id){tasks=tasks.filter(t=>t.id!==id);tasks.forEach(t=>{if(t.dep===id)t.dep=null;if(t.parentId===id)t.parentId=null;});renderRows();renderTodo();scheduleSave();}
+
+let editingTaskId=null;
+function openTaskModal(id,isChild,parentId){
+  editingTaskId=id||null;const mc=document.getElementById('modalContainer');
+  const parents=getParents();const depOpts=tasks.filter(t=>t.id!==id).map(t=>`<option value="${t.id}">${t.name}</option>`).join('');const parentOpts=parents.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+  let v={name:'',start:iso(today),end:iso(addD(today,5)),status:'todo',dep:'',parentId:parentId||'',deadline:false,assignee:''};
+  if(id){const t=getTask(id);v={name:t.name,start:t.start,end:t.end,status:t.status,dep:t.dep||'',parentId:t.parentId||'',deadline:!!t.deadline,assignee:t.assignee||''};}
+  mc.innerHTML=`<div class="modal-overlay" id="mbg"><div class="modal">
+    <h3>${id?'タスクを編集':'タスクを追加'}</h3>
+    <div class="form-row"><label>タスク名</label><input id="fN" value="${v.name}" placeholder="タスク名"></div>
+    <div class="form-row"><label>担当者</label><input id="fA" value="${v.assignee}" placeholder="例：田中 太郎"></div>
+    <div class="form-row"><label>親タスク</label><select id="fP"><option value="">なし（親タスク）</option>${parentOpts}</select></div>
+    <div class="form-row"><label>開始日</label><input id="fS" type="date" value="${v.start}"></div>
+    <div class="form-row"><label>終了日</label><input id="fE" type="date" value="${v.end}"></div>
+    <div class="form-row"><label>ステータス</label><select id="fSt"><option value="todo"${v.status==='todo'?' selected':''}>未着手</option><option value="doing"${v.status==='doing'?' selected':''}>進行中</option><option value="done"${v.status==='done'?' selected':''}>完了</option></select></div>
+    <div class="form-row"><label>依存タスク</label><select id="fD"><option value="">なし</option>${depOpts}</select></div>
+    <div class="form-row"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" id="fDL"${v.deadline?' checked':''} style="width:auto;"> ◆ 締め切りマークを表示</label></div>
+    <div class="form-actions"><button class="btn" id="fCancel">キャンセル</button><button class="btn primary" id="fSave">保存</button></div>
+  </div></div>`;
+  document.getElementById('fP').value=v.parentId;document.getElementById('fD').value=v.dep;
+  document.getElementById('mbg').onclick=e=>{if(e.target===e.currentTarget)closeModal();};document.getElementById('fCancel').onclick=closeModal;document.getElementById('fSave').onclick=saveTask;document.getElementById('fN').focus();
+}
+
+function saveTask(){
+  const name=document.getElementById('fN').value.trim();const assignee=document.getElementById('fA').value.trim();const start=document.getElementById('fS').value,end=document.getElementById('fE').value;const status=document.getElementById('fSt').value;const dep=document.getElementById('fD').value?parseInt(document.getElementById('fD').value):null;const parentId=document.getElementById('fP').value?parseInt(document.getElementById('fP').value):null;const deadline=document.getElementById('fDL').checked;
+  if(!name||!start||!end)return;
+  if(editingTaskId){const t=getTask(editingTaskId);Object.assign(t,{name,assignee,start,end,status,dep,parentId,deadline});}else tasks.push({id:nid++,name,assignee,start,end,status,parentId,dep,deadline});
+  closeModal();renderRows();renderTodo();scheduleSave();
+}
+
+function openRoutineModal(id){
+  const mc=document.getElementById('modalContainer');const r=id?routines.find(x=>x.id===id):null;const v=r||{name:'',freq:'daily',dow:1,dom:1};
+  mc.innerHTML=`<div class="modal-overlay" id="mbg"><div class="modal">
+    <h3>${r?'ルーティンを編集':'ルーティンを追加'}</h3>
+    <div class="form-row"><label>名前</label><input id="rN" value="${v.name}" placeholder="例：週次レビュー"></div>
+    <div class="form-row"><label>頻度</label><select id="rF"><option value="daily"${v.freq==='daily'?' selected':''}>毎日</option><option value="weekly"${v.freq==='weekly'?' selected':''}>毎週</option><option value="monthly"${v.freq==='monthly'?' selected':''}>毎月</option></select></div>
+    <div class="form-row" id="rDowRow" style="${v.freq!=='weekly'?'display:none':''}"><label>曜日</label><select id="rDow">${['日','月','火','水','木','金','土'].map((d,i)=>`<option value="${i}"${v.dow===i?' selected':''}>${d}曜日</option>`).join('')}</select></div>
+    <div class="form-row" id="rDomRow" style="${v.freq!=='monthly'?'display:none':''}"><label>日付</label><select id="rDom">${Array.from({length:28},(_,i)=>`<option value="${i+1}"${v.dom===i+1?' selected':''}>${i+1}日</option>`).join('')}</select></div>
+    <div class="form-actions"><button class="btn" id="rCancel">キャンセル</button><button class="btn primary" id="rSave">保存</button></div>
+  </div></div>`;
+  document.getElementById('rF').onchange=function(){document.getElementById('rDowRow').style.display=this.value==='weekly'?'':'none';document.getElementById('rDomRow').style.display=this.value==='monthly'?'':'none';};
+  document.getElementById('mbg').onclick=e=>{if(e.target===e.currentTarget)closeModal();};document.getElementById('rCancel').onclick=closeModal;
+  document.getElementById('rSave').onclick=()=>{const name=document.getElementById('rN').value.trim();if(!name)return;const freq=document.getElementById('rF').value;const dow=freq==='weekly'?parseInt(document.getElementById('rDow').value):null;const dom=freq==='monthly'?parseInt(document.getElementById('rDom').value):null;if(r)Object.assign(r,{name,freq,dow,dom});else routines.push({id:Date.now(),name,freq,dow,dom,priority:''});closeModal();renderTodo();scheduleSave();};
+  document.getElementById('rN').focus();
+}
+
+function closeModal(){document.getElementById('modalContainer').innerHTML='';}
+
+function renderAll(){
+  applyColWidths();renderHeader();renderRows();renderTodo();
+}
+
+document.getElementById('addParentBtn').onclick=()=>openTaskModal(null,false,null);
+document.getElementById('addRoutineBtn').onclick=()=>openRoutineModal(null);
+setupColResize('nameResizeHandle',()=>NAME_W,w=>{NAME_W=w;},120,360);
+setupColResize('assigneeResizeHandle',()=>ASSIGNEE_W,w=>{ASSIGNEE_W=w;},70,200);
+
+window.addEventListener('load',()=>{
+  if(typeof google!=='undefined')initGoogleAuth();
+  else document.getElementById('loginBtn').onclick=()=>alert('Google APIの読み込みに失敗しました。');
+});
+</script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+</body>
+</html>
