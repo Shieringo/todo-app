@@ -174,7 +174,7 @@ const START=new Date(today);
 
 function addD(d,n){const r=new Date(d);r.setDate(r.getDate()+n);return r;}
 function diff(a,b){return Math.round((b-a)/86400000);}
-function iso(d){return d.toISOString().split('T')[0];}
+function iso(d){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`;}
 function colOf(s){const d=new Date(s);d.setHours(0,0,0,0);return Math.max(0,Math.min(DAYS-1,diff(START,d)));}
 function fmtDate(s){const d=new Date(s);return(d.getMonth()+1)+'/'+d.getDate()+'('+['日','月','火','水','木','金','土'][d.getDay()]+')';}
 
