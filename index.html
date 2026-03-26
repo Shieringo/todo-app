@@ -395,7 +395,8 @@ function renderRows(){
     if(isChild){const ind=document.createElement('span');ind.className='indent';col.appendChild(ind);const sp=document.createElement('span');sp.className='toggle-placeholder';col.appendChild(sp);}
     else{const children=getChildren(task.id);const isCollapsed=!!collapsed[task.id];const tb=document.createElement('button');tb.className='toggle-btn'+(isCollapsed?' collapsed':'');tb.innerHTML='&#9660;';if(children.length===0)tb.style.visibility='hidden';tb.onclick=()=>{collapsed[task.id]=!collapsed[task.id];renderRows();scheduleSave();};col.appendChild(tb);}
     const dot=document.createElement('span');dot.className='task-status-dot';dot.style.background=SC[task.status];col.appendChild(dot);
-    const nm=document.createElement('span');nm.className='task-name'+(isChild?'':' parent-name');nm.textContent=task.name;nm.title=task.name;nm.onclick=()=>openTaskModal(task.id,isChild);col.appendChild(nm);
+    const nm=document.createElement('span');nm.className='task-name'+(isChild?'':' parent-name');nm.textContent=task.name;nm.title=task.url?task.name+' 🔗':task.name;nm.onclick=()=>openTaskModal(task.id,isChild);col.appendChild(nm);
+    if(task.url){const lk=document.createElement('a');lk.href=task.url;lk.target='_blank';lk.style.cssText='font-size:10px;color:#185FA5;text-decoration:none;flex-shrink:0;';lk.textContent='🔗';col.appendChild(lk);}
     const acts=document.createElement('div');acts.className='task-actions';
     if(!isChild){const ab=document.createElement('button');ab.textContent='+';ab.title='子タスク追加';ab.onclick=e=>{e.stopPropagation();openTaskModal(null,true,task.id);};acts.appendChild(ab);}
     const eb=document.createElement('button');eb.textContent='✎';eb.onclick=e=>{e.stopPropagation();openTaskModal(task.id,isChild);};
@@ -432,6 +433,7 @@ function openTaskModal(id,isChild,parentId){
     <h3>${id?'タスクを編集':'タスクを追加'}</h3>
     <div class="form-row"><label>タスク名</label><input id="fN" value="${v.name}" placeholder="タスク名"></div>
     <div class="form-row"><label>担当者</label><input id="fA" value="${v.assignee}" placeholder="例：田中 太郎"></div>
+    <div class="form-row"><label>URL（参考リンク）</label><input id="fU" value="${v.url||''}" placeholder="https://..."></div>
     <div class="form-row"><label>親タスク</label><select id="fP"><option value="">なし（親タスク）</option>${parentOpts}</select></div>
     <div class="form-row"><label>開始日</label><input id="fS" type="date" value="${v.start}"></div>
     <div class="form-row"><label>終了日</label><input id="fE" type="date" value="${v.end}"></div>
@@ -445,9 +447,10 @@ function openTaskModal(id,isChild,parentId){
 }
 
 function saveTask(){
-  const name=document.getElementById('fN').value.trim();const assignee=document.getElementById('fA').value.trim();const start=document.getElementById('fS').value,end=document.getElementById('fE').value;const status=document.getElementById('fSt').value;const dep=document.getElementById('fD').value?parseInt(document.getElementById('fD').value):null;const parentId=document.getElementById('fP').value?parseInt(document.getElementById('fP').value):null;const deadline=document.getElementById('fDL').checked;
+  const deadline=document.getElementById('fDL').checked;
+  const url=document.getElementById('fU').value.trim();
   if(!name||!start||!end)return;
-  if(editingTaskId){const t=getTask(editingTaskId);Object.assign(t,{name,assignee,start,end,status,dep,parentId,deadline});}else tasks.push({id:nid++,name,assignee,start,end,status,parentId,dep,deadline});
+  if(editingTaskId){const t=getTask(editingTaskId);Object.assign(t,{name,assignee,url,start,end,status,dep,parentId,deadline});}else tasks.push({id:nid++,name,assignee,url,start,end,status,parentId,dep,deadline});
   closeModal();renderRows();renderTodo();scheduleSave();
 }
 
