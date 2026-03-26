@@ -456,6 +456,7 @@ function openRoutineModal(id){
   mc.innerHTML=`<div class="modal-overlay" id="mbg"><div class="modal">
     <h3>${r?'ルーティンを編集':'ルーティンを追加'}</h3>
     <div class="form-row"><label>名前</label><input id="rN" value="${v.name}" placeholder="例：週次レビュー"></div>
+    <div class="form-row"><label>優先度</label><select id="rPr"><option value=""${!v.priority?' selected':''}>なし</option><option value="A"${v.priority==='A'?' selected':''}>A</option><option value="B"${v.priority==='B'?' selected':''}>B</option><option value="C"${v.priority==='C'?' selected':''}>C</option><option value="D"${v.priority==='D'?' selected':''}>D</option></select></div>
     <div class="form-row"><label>頻度</label><select id="rF"><option value="daily"${v.freq==='daily'?' selected':''}>毎日</option><option value="weekly"${v.freq==='weekly'?' selected':''}>毎週</option><option value="monthly"${v.freq==='monthly'?' selected':''}>毎月</option></select></div>
     <div class="form-row" id="rDowRow" style="${v.freq!=='weekly'?'display:none':''}"><label>曜日</label><select id="rDow">${['日','月','火','水','木','金','土'].map((d,i)=>`<option value="${i}"${v.dow===i?' selected':''}>${d}曜日</option>`).join('')}</select></div>
     <div class="form-row" id="rDomRow" style="${v.freq!=='monthly'?'display:none':''}"><label>日付</label><select id="rDom">${Array.from({length:28},(_,i)=>`<option value="${i+1}"${v.dom===i+1?' selected':''}>${i+1}日</option>`).join('')}</select></div>
@@ -463,7 +464,7 @@ function openRoutineModal(id){
   </div></div>`;
   document.getElementById('rF').onchange=function(){document.getElementById('rDowRow').style.display=this.value==='weekly'?'':'none';document.getElementById('rDomRow').style.display=this.value==='monthly'?'':'none';};
   document.getElementById('mbg').onclick=e=>{if(e.target===e.currentTarget)closeModal();};document.getElementById('rCancel').onclick=closeModal;
-  document.getElementById('rSave').onclick=()=>{const name=document.getElementById('rN').value.trim();if(!name)return;const freq=document.getElementById('rF').value;const dow=freq==='weekly'?parseInt(document.getElementById('rDow').value):null;const dom=freq==='monthly'?parseInt(document.getElementById('rDom').value):null;if(r)Object.assign(r,{name,freq,dow,dom});else routines.push({id:Date.now(),name,freq,dow,dom,priority:''});closeModal();renderTodo();scheduleSave();};
+  document.getElementById('rSave').onclick=()=>{const name=document.getElementById('rN').value.trim();if(!name)return;const freq=document.getElementById('rF').value;const dow=freq==='weekly'?parseInt(document.getElementById('rDow').value):null;const dom=freq==='monthly'?parseInt(document.getElementById('rDom').value):null;const priority=document.getElementById('rPr').value;if(r)Object.assign(r,{name,freq,dow,dom,priority});else routines.push({id:Date.now(),name,freq,dow,dom,priority});closeModal();renderTodo();scheduleSave();};
   document.getElementById('rN').focus();
 }
 
