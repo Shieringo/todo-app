@@ -441,7 +441,7 @@ function openTaskModal(id,isChild,parentId){
     <div class="form-row"><label>ステータス</label><select id="fSt"><option value="todo"${v.status==='todo'?' selected':''}>未着手</option><option value="doing"${v.status==='doing'?' selected':''}>進行中</option><option value="done"${v.status==='done'?' selected':''}>完了</option></select></div>
     <div class="form-row"><label>依存タスク</label><select id="fD"><option value="">なし</option>${depOpts}</select></div>
     <div class="form-row"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" id="fDL"${v.deadline?' checked':''} style="width:auto;"> ◆ 締め切りマークを表示</label></div>
-    <div class="form-actions"><button class="btn" id="fCancel">キャンセル</button><button class="btn primary" id="fSave">保存</button></div>
+    <div class="form-actions"><button class="btn" id="fCancel">Cnacel</button><button class="btn primary" id="fSave">Save</button></div>
   </div></div>`;
   document.getElementById('fP').value=v.parentId;document.getElementById('fD').value=v.dep;
   document.getElementById('mbg').onclick=e=>{if(e.target===e.currentTarget)closeModal();};document.getElementById('fCancel').onclick=closeModal;document.getElementById('fSave').onclick=saveTask;document.getElementById('fN').focus();
