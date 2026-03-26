@@ -489,10 +489,11 @@ function openRoutineList(){
   mc.innerHTML=`<div class="modal-overlay" id="mbg"><div class="modal">
     <h3 style="margin-bottom:0.75rem;">ルーティン一覧</h3>
     ${rows}
-    <div class="form-actions"><button class="btn" id="rlClose">閉じる</button><button class="btn primary" onclick="openRoutineModal(null);closeModal();">+ 追加</button></div>
+    <div class="form-actions"><button class="btn" id="rlClose">Close</button><button class="btn primary" id="rlAdd">+ Add</button></div>
   </div></div>`;
   document.getElementById('mbg').onclick=e=>{if(e.target===e.currentTarget)closeModal();};
   document.getElementById('rlClose').onclick=closeModal;
+  document.getElementById('rlAdd').onclick=()=>{closeModal();openRoutineModal(null);};
 }
 function closeModal(){document.getElementById('modalContainer').innerHTML='';}
 
