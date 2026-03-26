@@ -93,6 +93,24 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#f8f7f4;color:#1a1a1
 .todo-del:hover{background:#eee;}
 .todo-add-row{display:flex;gap:6px;margin-top:8px;}
 .todo-add-row input{flex:1;font-size:12px;padding:5px 8px;border:0.5px solid #ccc;border-radius:6px;background:#fff;color:#1a1a1a;}
+/* タイムスケジュール */
+.schedule-section{margin-top:16px;border-top:0.5px solid #eee;padding-top:12px;}
+.schedule-section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.schedule-section-title{font-size:11px;font-weight:500;color:#888;letter-spacing:.04em;}
+.schedule-sync-btn{font-size:11px;padding:2px 8px;border-radius:4px;border:0.5px solid #ccc;background:#fff;color:#185FA5;cursor:pointer;}
+.schedule-sync-btn:hover{background:#E6F1FB;}
+.time-grid{position:relative;width:100%;}
+.time-row{display:flex;align-items:flex-start;min-height:28px;position:relative;}
+.time-row.half-hour{min-height:14px;}
+.time-label{width:36px;font-size:10px;color:#bbb;flex-shrink:0;padding-top:1px;text-align:right;padding-right:6px;}
+.time-label.half{color:transparent;}
+.time-line{flex:1;border-top:0.5px solid #f0f0ee;position:relative;min-height:28px;}
+.time-line.half{border-top:0.5px dashed #f5f5f2;min-height:14px;}
+.cal-event{position:absolute;left:2px;right:2px;border-radius:4px;padding:2px 5px;font-size:10px;font-weight:500;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;cursor:default;z-index:2;line-height:1.3;}
+.cal-event:hover{opacity:0.85;}
+.schedule-empty{font-size:11px;color:#bbb;text-align:center;padding:12px 0;}
+.gcal-status{font-size:10px;color:#aaa;text-align:center;padding:4px 0;}
+/* modal */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;z-index:200;}
 .modal{background:#fff;border-radius:10px;border:0.5px solid #ddd;padding:1.5rem;width:340px;max-width:90vw;max-height:90vh;overflow-y:auto;box-shadow:0 4px 24px rgba(0,0,0,0.12);}
 .modal h3{font-size:15px;font-weight:500;margin-bottom:1rem;color:#1a1a1a;}
@@ -132,6 +150,15 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#f8f7f4;color:#1a1a1
         <button id="todayBtn" title="今日に戻る" style="font-size:11px;padding:2px 8px;border-radius:4px;border:0.5px solid #ccc;background:#fff;color:#185FA5;cursor:pointer;font-weight:500;">Today</button>
       </h2>
       <div id="todoContent"></div>
+      <!-- タイムスケジュール -->
+      <div class="schedule-section">
+        <div class="schedule-section-header">
+          <span class="schedule-section-title">スケジュール</span>
+          <button class="schedule-sync-btn" id="calSyncBtn">↻ 同期</button>
+        </div>
+        <div id="calStatus" class="gcal-status"></div>
+        <div class="time-grid" id="timeGrid"></div>
+      </div>
     </div>
     <div class="gantt-side">
       <div class="gantt-wrap">
@@ -162,13 +189,16 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#f8f7f4;color:#1a1a1
 
 <script>
 const CLIENT_ID = '601672608883-osv2bk6af0c0gviimhd816j9jilo38mm.apps.googleusercontent.com';
-const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/calendar.readonly';
 const FILE_NAME = 'gantt-todo-data.json';
 const COL_W=34,DAYS=60;
 const SC={todo:'#378ADD',doing:'#639922',done:'#888780'};
 const SB={todo:'#E6F1FB',doing:'#EAF3DE',done:'#F1EFE8'};
 const ST={todo:'#185FA5',doing:'#3B6D11',done:'#5F5E5A'};
 const PRIORITIES=['A','B','C','D',''];
+const CAL_COLORS=['#4285F4','#0F9D58','#F4B400','#DB4437','#7986CB','#33B679','#E67C73','#A79B8E','#3F9142','#039BE5'];
+const HOUR_START=8,HOUR_END=21,HOUR_HEIGHT=28;
+
 const today=new Date();today.setHours(0,0,0,0);
 const START=new Date(today);
 
@@ -177,6 +207,7 @@ function diff(a,b){return Math.round((b-a)/86400000);}
 function iso(d){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`;}
 function colOf(s){const d=new Date(s);d.setHours(0,0,0,0);return Math.max(0,Math.min(DAYS-1,diff(START,d)));}
 function fmtDate(s){const d=new Date(s);return(d.getMonth()+1)+'/'+d.getDate()+'('+['日','月','火','水','木','金','土'][d.getDay()]+')';}
+function fmtTime(dt){return dt.getHours()+':'+String(dt.getMinutes()).padStart(2,'0');}
 
 const dates=Array.from({length:DAYS},(_,i)=>addD(START,i));
 let NAME_W=200,ASSIGNEE_W=100;
@@ -184,6 +215,8 @@ let tokenClient,accessToken=null,driveFileId=null;
 let saveTimer=null;
 let nid=10,ntodoid=100,collapsed={},selectedDate=iso(today);
 let tasks=[],routines=[],todoItems=[],doneMap={};
+let calEvents=[];
+let calColorMap={};
 
 function defaultData(){
   tasks=[{id:1,name:'サンプル：調査',start:iso(addD(today,0)),end:iso(addD(today,7)),status:'doing',parentId:null,dep:null,deadline:false,assignee:'',url:''}];
@@ -229,7 +262,7 @@ async function loadFromDrive(){
   try{
     const res=await fetch(`https://www.googleapis.com/drive/v3/files/${driveFileId}?alt=media`,{headers:{Authorization:'Bearer '+accessToken}});
     const text=await res.text();
-    if(deserializeData(text)){setSyncStatus('synced','Synced');renderAll();}
+    if(deserializeData(text)){setSyncStatus('synced','Synced');renderAll();fetchCalendarEvents();}
   }catch(e){setSyncStatus('error','Load Failed');}
 }
 async function createDriveFile(){
@@ -245,6 +278,7 @@ async function createDriveFile(){
   driveFileId=data.id;
   setSyncStatus('synced','Synced (New)');
   renderAll();
+  fetchCalendarEvents();
 }
 async function saveToDrive(){
   if(!driveFileId||!accessToken)return;
@@ -256,6 +290,94 @@ async function saveToDrive(){
   }catch(e){setSyncStatus('error','Error');}
 }
 function scheduleSave(){if(saveTimer)clearTimeout(saveTimer);saveTimer=setTimeout(()=>saveToDrive(),2000);}
+
+// Googleカレンダー取得
+async function fetchCalendarEvents(){
+  if(!accessToken)return;
+  const statusEl=document.getElementById('calStatus');
+  statusEl.textContent='カレンダーを読み込み中...';
+  try{
+    const dateStr=selectedDate;
+    const timeMin=new Date(dateStr+'T00:00:00').toISOString();
+    const timeMax=new Date(dateStr+'T23:59:59').toISOString();
+    // カレンダー一覧取得
+    const calRes=await fetch(`https://www.googleapis.com/calendar/v3/users/me/calendarList`,{headers:{Authorization:'Bearer '+accessToken}});
+    const calData=await calRes.json();
+    if(!calData.items){statusEl.textContent='カレンダーの取得に失敗しました';renderTimeGrid([]);return;}
+    // 各カレンダーの色を記録
+    calData.items.forEach((cal,i)=>{calColorMap[cal.id]=cal.backgroundColor||CAL_COLORS[i%CAL_COLORS.length];});
+    // イベント取得（primaryカレンダーから）
+    const evRes=await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}&singleEvents=true&orderBy=startTime`,{headers:{Authorization:'Bearer '+accessToken}});
+    const evData=await evRes.json();
+    calEvents=(evData.items||[]).filter(e=>e.start);
+    statusEl.textContent=calEvents.length>0?'':'予定なし';
+    renderTimeGrid(calEvents);
+  }catch(e){statusEl.textContent='取得エラー';renderTimeGrid([]);}
+}
+
+function renderTimeGrid(events){
+  const grid=document.getElementById('timeGrid');
+  grid.innerHTML='';
+  const totalH=(HOUR_END-HOUR_START)*HOUR_HEIGHT;
+  const wrapper=document.createElement('div');
+  wrapper.style.cssText=`position:relative;width:100%;height:${totalH}px;`;
+
+  // 時間ラベルと横線
+  for(let h=HOUR_START;h<=HOUR_END;h++){
+    const row=document.createElement('div');
+    row.style.cssText=`position:absolute;left:0;right:0;top:${(h-HOUR_START)*HOUR_HEIGHT}px;display:flex;align-items:flex-start;`;
+    const label=document.createElement('div');
+    label.style.cssText='width:36px;font-size:10px;color:#bbb;flex-shrink:0;text-align:right;padding-right:6px;line-height:1;';
+    label.textContent=h+':00';
+    const line=document.createElement('div');
+    line.style.cssText='flex:1;border-top:0.5px solid #eee;';
+    row.append(label,line);
+    wrapper.appendChild(row);
+    // 30分線
+    if(h<HOUR_END){
+      const halfRow=document.createElement('div');
+      halfRow.style.cssText=`position:absolute;left:36px;right:0;top:${(h-HOUR_START)*HOUR_HEIGHT+HOUR_HEIGHT/2}px;border-top:0.5px dashed #f5f5f2;`;
+      wrapper.appendChild(halfRow);
+    }
+  }
+
+  // イベント配置
+  events.forEach((ev,idx)=>{
+    if(!ev.start||ev.start.date)return; // 終日イベントはスキップ
+    const startDt=new Date(ev.start.dateTime);
+    const endDt=new Date(ev.end.dateTime);
+    const startH=startDt.getHours()+(startDt.getMinutes()/60);
+    const endH=endDt.getHours()+(endDt.getMinutes()/60);
+    const clampStart=Math.max(startH,HOUR_START);
+    const clampEnd=Math.min(endH,HOUR_END);
+    if(clampStart>=clampEnd)return;
+    const top=(clampStart-HOUR_START)*HOUR_HEIGHT;
+    const height=(clampEnd-clampStart)*HOUR_HEIGHT;
+    const color=ev.colorId?CAL_COLORS[parseInt(ev.colorId)-1]||'#4285F4':'#4285F4';
+    const el=document.createElement('div');
+    el.className='cal-event';
+    el.style.cssText=`top:${top}px;height:${Math.max(height,14)}px;background:${color}22;color:${color};border-left:3px solid ${color};left:38px;right:2px;`;
+    el.textContent=`${fmtTime(startDt)} ${ev.summary||'(無題)'}`;
+    el.title=`${ev.summary||'(無題)'}\n${fmtTime(startDt)}〜${fmtTime(endDt)}${ev.location?'\n'+ev.location:''}`;
+    wrapper.appendChild(el);
+  });
+
+  // 終日イベント
+  const allDayEvents=events.filter(e=>e.start&&e.start.date);
+  if(allDayEvents.length>0){
+    const allDaySec=document.createElement('div');
+    allDaySec.style.cssText='margin-bottom:6px;';
+    allDayEvents.forEach(ev=>{
+      const el=document.createElement('div');
+      el.style.cssText='font-size:11px;padding:3px 6px;border-radius:4px;background:#E6F1FB;color:#185FA5;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+      el.textContent='終日: '+(ev.summary||'(無題)');
+      allDaySec.appendChild(el);
+    });
+    grid.appendChild(allDaySec);
+  }
+
+  grid.appendChild(wrapper);
+}
 
 function initGoogleAuth(){
   tokenClient=google.accounts.oauth2.initTokenClient({
@@ -277,6 +399,7 @@ document.getElementById('loginBtn').onclick=()=>{
   tokenClient.requestAccessToken();
 };
 document.getElementById('forceSaveBtn').onclick=()=>{if(saveTimer)clearTimeout(saveTimer);saveToDrive();};
+document.getElementById('calSyncBtn').onclick=()=>fetchCalendarEvents();
 
 function applyColWidths(){
   document.getElementById('nameHeader').style.width=NAME_W+'px';
@@ -295,7 +418,7 @@ function setupColResize(handleId,getW,setW,min,max){
 function renderTodo(){
   const picker=document.getElementById('todoDatePicker');
   picker.value=selectedDate;
-  picker.onchange=()=>{selectedDate=picker.value;renderHeader();renderRows();renderTodo();};
+  picker.onchange=()=>{selectedDate=picker.value;renderHeader();renderRows();renderTodo();fetchCalendarEvents();};
   const content=document.getElementById('todoContent');content.innerHTML='';
   const deadlines=getDeadlinesForDate(selectedDate);
   const activeTasks=getTasksForDate(selectedDate);
@@ -369,7 +492,7 @@ function renderHeader(){
     const c=document.createElement('div');
     c.className='date-cell'+(diff(today,d)===0?' today':'')+(iso(d)===selectedDate?' selected-date':'');
     c.textContent=(d.getDate()===1||i===0)?(d.getMonth()+1)+'/'+d.getDate():d.getDate();
-    c.onclick=()=>{selectedDate=iso(d);renderHeader();renderRows();renderTodo();scheduleSave();};
+    c.onclick=()=>{selectedDate=iso(d);renderHeader();renderRows();renderTodo();fetchCalendarEvents();scheduleSave();};
     h.appendChild(c);
   });
 }
@@ -402,7 +525,6 @@ function renderRows(){
   const container=document.getElementById('ganttRows');container.innerHTML='';
   const fixedContainer=document.getElementById('fixedRows');fixedContainer.innerHTML='';
   const todayCol=diff(START,today);const selCol=colOf(selectedDate);
-
   function makeGridArea(){
     const g=document.createElement('div');g.className='grid-area';g.style.width=(DAYS*COL_W)+'px';
     dates.forEach((_,i)=>{const col=document.createElement('div');col.className='grid-col'+(i===todayCol?' today-col':'')+(i===selCol?' sel-col':'');g.appendChild(col);});
@@ -431,12 +553,9 @@ function renderRows(){
     const txt=document.createElement('span');txt.className='assignee-text';txt.textContent=task.assignee||'';txt.title=task.assignee||'';col.appendChild(txt);return col;
   }
   function makeFixedRow(task,isChild){
-    const row=document.createElement('div');
-    row.className='gantt-row'+(isChild?' child-row':'');
-    row.style.minHeight='40px';
+    const row=document.createElement('div');row.className='gantt-row'+(isChild?' child-row':'');row.style.minHeight='40px';
     row.append(makeNameCol(task,isChild),makeAssigneeCol(task));return row;
   }
-
   getParents().forEach(parent=>{
     const children=getChildren(parent.id);const isCollapsed=!!collapsed[parent.id];
     const row=document.createElement('div');row.className='gantt-row';row.style.minHeight='40px';
@@ -561,15 +680,17 @@ function openRoutineList(){
 }
 
 function closeModal(){document.getElementById('modalContainer').innerHTML='';}
-
 function renderAll(){applyColWidths();renderHeader();renderRows();renderTodo();}
 
-document.getElementById('todayBtn').onclick=()=>{selectedDate=iso(today);renderHeader();renderRows();renderTodo();};
+document.getElementById('todayBtn').onclick=()=>{selectedDate=iso(today);renderHeader();renderRows();renderTodo();fetchCalendarEvents();};
 document.getElementById('addParentBtn').onclick=()=>openTaskModal(null,false,null);
 document.getElementById('addRoutineBtn').onclick=()=>openRoutineModal(null);
 document.getElementById('listRoutineBtn').onclick=()=>openRoutineList();
 setupColResize('nameResizeHandle',()=>NAME_W,w=>{NAME_W=w;},120,360);
 setupColResize('assigneeResizeHandle',()=>ASSIGNEE_W,w=>{ASSIGNEE_W=w;},70,200);
+
+// 初期タイムグリッド表示
+renderTimeGrid([]);
 
 window.addEventListener('load',()=>{
   if(typeof google!=='undefined'){
