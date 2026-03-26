@@ -306,10 +306,21 @@ async function fetchCalendarEvents(){
     if(!calData.items){statusEl.textContent='カレンダーの取得に失敗しました';renderTimeGrid([]);return;}
     // 各カレンダーの色を記録
     calData.items.forEach((cal,i)=>{calColorMap[cal.id]=cal.backgroundColor||CAL_COLORS[i%CAL_COLORS.length];});
-    // イベント取得（primaryカレンダーから）
-    const evRes=await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}&singleEvents=true&orderBy=startTime`,{headers:{Authorization:'Bearer '+accessToken}});
-    const evData=await evRes.json();
-    calEvents=(evData.items||[]).filter(e=>e.start);
+    // 全カレンダーからイベント取得
+    const targetCals=calData.items.filter(c=>c.id==='lfgj0ngtb6li7d82vlqor5j8co@group.calendar.google.com');
+    const allEvents=[];
+    for(const cal of targetCals){
+      try{
+        const evRes=await fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(cal.id)}/events?timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}&singleEvents=true&orderBy=startTime`,{headers:{Authorization:'Bearer '+accessToken}});
+        const evData=await evRes.json();
+        if(evData.items){
+          evData.items.forEach(ev=>{ev._calColor=cal.backgroundColor||'#4285F4';ev._calName=cal.summary;});
+          allEvents.push(...evData.items.filter(e=>e.start));
+        }
+      }catch(e){}
+    }
+    allEvents.sort((a,b)=>new Date(a.start.dateTime||a.start.date)-new Date(b.start.dateTime||b.start.date));
+    calEvents=allEvents;
     statusEl.textContent=calEvents.length>0?'':'予定なし';
     renderTimeGrid(calEvents);
   }catch(e){statusEl.textContent='取得エラー';renderTimeGrid([]);}
@@ -353,7 +364,7 @@ function renderTimeGrid(events){
     if(clampStart>=clampEnd)return;
     const top=(clampStart-HOUR_START)*HOUR_HEIGHT;
     const height=(clampEnd-clampStart)*HOUR_HEIGHT;
-    const color=ev.colorId?CAL_COLORS[parseInt(ev.colorId)-1]||'#4285F4':'#4285F4';
+    const color=ev.colorId?CAL_COLORS[parseInt(ev.colorId)-1]||(ev._calColor||'#4285F4'):(ev._calColor||'#4285F4');
     const el=document.createElement('div');
     el.className='cal-event';
     el.style.cssText=`top:${top}px;height:${Math.max(height,14)}px;background:${color}22;color:${color};border-left:3px solid ${color};left:38px;right:2px;`;
