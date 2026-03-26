@@ -126,9 +126,10 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#f8f7f4;color:#1a1a1
   </div>
   <div class="main-layout">
     <div class="todo-side">
-      <h2>TODO <input type="date" id="todoDatePicker" style="font-size:12px;color:#888;font-weight:400;border:none;background:transparent;cursor:pointer;outline:none;font-family:inherit;"></h2>
-      <div id="todoContent"></div>
-    </div>
+      <h2>TODO 
+        <input type="date" id="todoDatePicker" style="font-size:12px;color:#888;font-weight:400;border:none;background:transparent;cursor:pointer;outline:none;font-family:inherit;">
+        <button id="todayBtn" title="今日に戻る" style="font-size:11px;padding:2px 8px;border-radius:4px;border:0.5px solid #ccc;background:#fff;color:#185FA5;cursor:pointer;font-weight:500;">今日</button>
+      </h2>
     <div class="gantt-side">
       <div class="gantt-wrap">
         <div class="gantt">
@@ -324,6 +325,7 @@ function renderTodo(){
   const picker=document.getElementById('todoDatePicker');
   picker.value=selectedDate;
   picker.onchange=()=>{selectedDate=picker.value;renderHeader();renderRows();renderTodo();};
+  document.getElementById('todayBtn').onclick=()=>{selectedDate=iso(today);renderHeader();renderRows();renderTodo();};
   const content=document.getElementById('todoContent');content.innerHTML='';
   const deadlines=getDeadlinesForDate(selectedDate);
   const activeTasks=getTasksForDate(selectedDate);
