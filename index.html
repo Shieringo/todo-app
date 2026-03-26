@@ -212,7 +212,7 @@ function deserializeData(json){
     const d=JSON.parse(json);
     tasks=d.tasks||[];routines=d.routines||[];todoItems=d.todoItems||[];
     doneMap=d.doneMap||{};nid=d.nid||100;ntodoid=d.ntodoid||100;
-    collapsed=d.collapsed||{};selectedDate=d.selectedDate||iso(today);
+    collapsed=d.collapsed||{};selectedDate=iso(today);
     return true;
   }catch(e){return false;}
 }
