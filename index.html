@@ -447,7 +447,7 @@ function openTaskModal(id,isChild,parentId){
 }
 
 function saveTask(){
-  const deadline=document.getElementById('fDL').checked;
+  const name=document.getElementById('fN').value.trim();const assignee=document.getElementById('fA').value.trim();const start=document.getElementById('fS').value,end=document.getElementById('fE').value;const status=document.getElementById('fSt').value;const dep=document.getElementById('fD').value?parseInt(document.getElementById('fD').value):null;const parentId=document.getElementById('fP').value?parseInt(document.getElementById('fP').value):null;const deadline=document.getElementById('fDL').checked;
   const url=document.getElementById('fU').value.trim();
   if(!name||!start||!end)return;
   if(editingTaskId){const t=getTask(editingTaskId);Object.assign(t,{name,assignee,url,start,end,status,dep,parentId,deadline});}else tasks.push({id:nid++,name,assignee,url,start,end,status,parentId,dep,deadline});
