@@ -325,7 +325,6 @@ function renderTodo(){
   const picker=document.getElementById('todoDatePicker');
   picker.value=selectedDate;
   picker.onchange=()=>{selectedDate=picker.value;renderHeader();renderRows();renderTodo();};
-  document.getElementById('todayBtn').onclick=()=>{selectedDate=iso(today);renderHeader();renderRows();renderTodo();};
   const content=document.getElementById('todoContent');content.innerHTML='';
   const deadlines=getDeadlinesForDate(selectedDate);
   const activeTasks=getTasksForDate(selectedDate);
@@ -472,6 +471,7 @@ function renderAll(){
   applyColWidths();renderHeader();renderRows();renderTodo();
 }
 
+document.getElementById('todayBtn').onclick=()=>{selectedDate=iso(today);renderHeader();renderRows();renderTodo();};
 document.getElementById('addParentBtn').onclick=()=>openTaskModal(null,false,null);
 document.getElementById('addRoutineBtn').onclick=()=>openRoutineModal(null);
 setupColResize('nameResizeHandle',()=>NAME_W,w=>{NAME_W=w;},120,360);
