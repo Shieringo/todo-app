@@ -335,7 +335,7 @@ function renderTodo(){
 
   function makePriorityBadge(priority,type,id){
     const badge=document.createElement('div');const p=priority||'';
-    badge.className='priority-badge p'+(p||'None');badge.textContent=p||'–';badge.title='優先度を変更';
+    badge.className='priority-badge p'+(p||'None');badge.textContent=p||'–';badge.title='優先順位を変更';
     badge.onclick=()=>{const idx=PRIORITIES.indexOf(p);const next=PRIORITIES[(idx+1)%PRIORITIES.length];if(type==='task'){const t=getTask(id);if(t)t.priority=next;}else if(type==='routine'){const r=routines.find(x=>x.id===id);if(r)r.priority=next;}else if(type==='manual'){const m=todoItems.find(x=>x.id===id);if(m)m.priority=next;}renderTodo();scheduleSave();};
     return badge;
   }
@@ -456,7 +456,7 @@ function openRoutineModal(id){
   mc.innerHTML=`<div class="modal-overlay" id="mbg"><div class="modal">
     <h3>${r?'ルーティンを編集':'ルーティンを追加'}</h3>
     <div class="form-row"><label>名前</label><input id="rN" value="${v.name}" placeholder="例：週次レビュー"></div>
-    <div class="form-row"><label>優先度</label><select id="rPr"><option value=""${!v.priority?' selected':''}>なし</option><option value="A"${v.priority==='A'?' selected':''}>A</option><option value="B"${v.priority==='B'?' selected':''}>B</option><option value="C"${v.priority==='C'?' selected':''}>C</option><option value="D"${v.priority==='D'?' selected':''}>D</option></select></div>
+    <div class="form-row"><label>優先順位</label><select id="rPr"><option value=""${!v.priority?' selected':''}>なし</option><option value="A"${v.priority==='A'?' selected':''}>A</option><option value="B"${v.priority==='B'?' selected':''}>B</option><option value="C"${v.priority==='C'?' selected':''}>C</option><option value="D"${v.priority==='D'?' selected':''}>D</option></select></div>
     <div class="form-row"><label>頻度</label><select id="rF"><option value="daily"${v.freq==='daily'?' selected':''}>毎日</option><option value="weekly"${v.freq==='weekly'?' selected':''}>毎週</option><option value="monthly"${v.freq==='monthly'?' selected':''}>毎月</option></select></div>
     <div class="form-row" id="rDowRow" style="${v.freq!=='weekly'?'display:none':''}"><label>曜日</label><select id="rDow">${['日','月','火','水','木','金','土'].map((d,i)=>`<option value="${i}"${v.dow===i?' selected':''}>${d}曜日</option>`).join('')}</select></div>
     <div class="form-row" id="rDomRow" style="${v.freq!=='monthly'?'display:none':''}"><label>日付</label><select id="rDom">${Array.from({length:28},(_,i)=>`<option value="${i+1}"${v.dom===i+1?' selected':''}>${i+1}日</option>`).join('')}</select></div>
