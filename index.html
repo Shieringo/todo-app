@@ -361,7 +361,7 @@ function renderTodo(){
   manuals.forEach(m=>manualSec.appendChild(makeTodoItem(m.name,getDoneKey('manual',m.id,selectedDate),m.priority,'manual',m.id,'',m.assignee||'')));
   const addRow=document.createElement('div');addRow.className='todo-add-row';
   const inp=document.createElement('input');inp.placeholder='+ TODO を追加...';inp.id='todoInput';
-  const addBtn=document.createElement('button');addBtn.className='btn sm';addBtn.textContent='追加';
+  const addBtn=document.createElement('button');addBtn.className='btn sm';addBtn.textContent='Add';
   function addManual(){const v=inp.value.trim();if(!v)return;todoItems.push({id:ntodoid++,name:v,date:selectedDate,priority:'',assignee:''});inp.value='';renderTodo();scheduleSave();setTimeout(()=>{const el=document.getElementById('todoInput');if(el)el.focus();},0);}
   addBtn.onclick=addManual;inp.onkeydown=e=>{if(e.key==='Enter')addManual();};
   addRow.append(inp,addBtn);manualSec.appendChild(addRow);content.appendChild(manualSec);
