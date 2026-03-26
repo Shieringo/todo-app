@@ -464,7 +464,7 @@ function openRoutineModal(id){
     <div class="form-row"><label>頻度</label><select id="rF"><option value="daily"${v.freq==='daily'?' selected':''}>毎日</option><option value="weekly"${v.freq==='weekly'?' selected':''}>毎週</option><option value="monthly"${v.freq==='monthly'?' selected':''}>毎月</option></select></div>
     <div class="form-row" id="rDowRow" style="${v.freq!=='weekly'?'display:none':''}"><label>曜日</label><select id="rDow">${['日','月','火','水','木','金','土'].map((d,i)=>`<option value="${i}"${v.dow===i?' selected':''}>${d}曜日</option>`).join('')}</select></div>
     <div class="form-row" id="rDomRow" style="${v.freq!=='monthly'?'display:none':''}"><label>日付</label><select id="rDom">${Array.from({length:28},(_,i)=>`<option value="${i+1}"${v.dom===i+1?' selected':''}>${i+1}日</option>`).join('')}</select></div>
-    <div class="form-actions"><button class="btn" id="rCancel">キャンセル</button><button class="btn primary" id="rSave">保存</button></div>
+    <div class="form-actions"><button class="btn" id="rCancel">Cancel</button><button class="btn primary" id="rSave">Save</button></div>
   </div></div>`;
   document.getElementById('rF').onchange=function(){document.getElementById('rDowRow').style.display=this.value==='weekly'?'':'none';document.getElementById('rDomRow').style.display=this.value==='monthly'?'':'none';};
   document.getElementById('mbg').onclick=e=>{if(e.target===e.currentTarget)closeModal();};document.getElementById('rCancel').onclick=closeModal;
