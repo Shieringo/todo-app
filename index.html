@@ -222,6 +222,7 @@ let nid=10,ntodoid=100,collapsed={},selectedDate=iso(today);
 let tasks=[],routines=[],todoItems=[],doneMap={};
 let calEvents=[];
 let calColorMap={};
+let holidays=new Set();
 
 function defaultData(){
   tasks=[{id:1,name:'サンプル：調査',start:iso(addD(today,0)),end:iso(addD(today,7)),status:'doing',parentId:null,dep:null,deadline:false,assignee:'',url:''}];
@@ -311,7 +312,15 @@ async function fetchCalendarEvents(){
     if(!calData.items){statusEl.textContent='カレンダーの取得に失敗しました';renderTimeGrid([]);return;}
     // 各カレンダーの色を記録
     calData.items.forEach((cal,i)=>{calColorMap[cal.id]=cal.backgroundColor||CAL_COLORS[i%CAL_COLORS.length];});
-    // 全カレンダーからイベント取得
+    // 祝日取得
+    const holCal=calData.items.find(c=>c.id==='ja.japanese#holiday@group.v.calendar.google.com');
+    if(holCal){
+      const holRes=await fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(holCal.id)}/events?timeMin=${encodeURIComponent(new Date(iso(addD(START,0))+'T00:00:00').toISOString())}&timeMax=${encodeURIComponent(new Date(iso(addD(START,DAYS))+'T00:00:00').toISOString())}&singleEvents=true`,{headers:{Authorization:'Bearer '+accessToken}});
+      const holData=await holRes.json();
+      holidays=new Set((holData.items||[]).map(e=>e.start.date));
+      renderHeader();renderRows();
+    }
+    // カレンダーからイベント取得
     const targetCals=calData.items.filter(c=>c.id==='lfgj0ngtb6li7d82vlqor5j8co@group.calendar.google.com');
     const allEvents=[];
     for(const cal of targetCals){
@@ -506,7 +515,8 @@ function renderHeader(){
   const h=document.getElementById('dateHeader');h.innerHTML='';
   dates.forEach((d,i)=>{
     const c=document.createElement('div');
-    c.className='date-cell'+(diff(today,d)===0?' today':'')+(iso(d)===selectedDate?' selected-date':'');
+    const dow=d.getDay();const isHol=holidays.has(iso(d));
+    c.className='date-cell'+(diff(today,d)===0?' today':'')+(iso(d)===selectedDate?' selected-date':'')+(dow===6&&!isHol?' sat':'')+(( dow===0||isHol)?' hol':'');
     c.textContent=(d.getDate()===1||i===0)?(d.getMonth()+1)+'/'+d.getDate():d.getDate();
     c.onclick=()=>{selectedDate=iso(d);renderHeader();renderRows();renderTodo();fetchCalendarEvents();scheduleSave();};
     h.appendChild(c);
@@ -543,7 +553,7 @@ function renderRows(){
   const todayCol=diff(START,today);const selCol=colOf(selectedDate);
   function makeGridArea(){
     const g=document.createElement('div');g.className='grid-area';g.style.width=(DAYS*COL_W)+'px';
-    dates.forEach((_,i)=>{const col=document.createElement('div');col.className='grid-col'+(i===todayCol?' today-col':'')+(i===selCol?' sel-col':'');g.appendChild(col);});
+    dates.forEach((d,i)=>{const col=document.createElement('div');const dow=d.getDay();const isHol=holidays.has(iso(d));col.className='grid-col'+(i===todayCol?' today-col':'')+(i===selCol?' sel-col':'')+(dow===6&&!isHol?' sat':'')+(( dow===0||isHol)?' sun':'');g.appendChild(col);});
     return g;
   }
   function makeNameCol(task,isChild){
