@@ -18,7 +18,6 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#f8f7f4;color:#1a1a1
 .btn.sm{font-size:12px;padding:4px 10px;}
 .btn.danger{background:#fff;color:#A32D2D;border-color:#F09595;}
 .btn.danger:hover{background:#FCEBEB;}
-.btn.success{background:#185FA5;color:#fff;border-color:#185FA5;}
 .sync-status{font-size:12px;padding:4px 10px;border-radius:6px;border:0.5px solid #ccc;background:#fff;color:#888;display:flex;align-items:center;gap:6px;}
 .sync-status.synced{color:#3B6D11;border-color:#97C459;background:#EAF3DE;}
 .sync-status.syncing{color:#854F0B;border-color:#EF9F27;background:#FAEEDA;}
@@ -29,10 +28,12 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#f8f7f4;color:#1a1a1
 .main-layout{display:flex;gap:0;align-items:flex-start;}
 .todo-side{width:260px;min-width:220px;flex-shrink:0;border-right:0.5px solid #ddd;padding-right:14px;margin-right:14px;}
 .gantt-side{flex:1;min-width:0;overflow:hidden;}
-.gantt-wrap{overflow-x:auto;}
-.gantt{width:max-content;min-width:100%;}
-.gantt-header{display:flex;border-bottom:0.5px solid #ddd;}
-.col-header{padding:8px 10px;font-size:12px;color:#666;font-weight:500;border-right:0.5px solid #ddd;display:flex;align-items:center;justify-content:space-between;user-select:none;position:relative;flex-shrink:0;background:#fafaf8;}
+.gantt-wrap{display:flex;overflow-x:hidden;}
+.fixed-cols{flex-shrink:0;z-index:2;}
+.scroll-area{overflow-x:auto;flex:1;}
+.gantt-header-fixed{display:flex;border-bottom:0.5px solid #ddd;}
+.gantt-header-scroll{display:flex;border-bottom:0.5px solid #ddd;}
+.col-header{padding:8px 10px;font-size:12px;color:#666;font-weight:500;border-right:0.5px solid #ddd;display:flex;align-items:center;justify-content:center;user-select:none;position:relative;flex-shrink:0;background:#fafaf8;}
 .date-header{display:flex;}
 .date-cell{width:34px;text-align:center;font-size:10px;color:#999;padding:8px 0;border-right:0.5px solid #ddd;cursor:pointer;background:#fafaf8;flex-shrink:0;}
 .date-cell:hover{background:#f0f0f0;}
@@ -43,8 +44,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#f8f7f4;color:#1a1a1
 .gantt-row.child-row{background:#fdfcfb;}
 .gantt-row.child-row:hover{background:#f5f5f2;}
 .name-col{padding:4px 8px;border-right:0.5px solid #eee;display:flex;align-items:center;gap:4px;overflow:hidden;flex-shrink:0;}
-.assignee-col{padding:4px 8px;border-right:0.5px solid #eee;display:flex;align-items:center;overflow:hidden;flex-shrink:0;}
-.assignee-text{font-size:12px;color:#666;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;}
+.assignee-col{padding:4px 8px;border-right:0.5px solid #eee;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;}
+.assignee-text{font-size:12px;color:#666;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;text-align:center;}
 .toggle-btn{width:15px;height:15px;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:3px;border:none;background:none;color:#999;font-size:10px;padding:0;transition:transform 0.15s;}
 .toggle-btn:hover{background:#eee;}
 .toggle-btn.collapsed{transform:rotate(-90deg);}
@@ -70,7 +71,6 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#f8f7f4;color:#1a1a1
 .col-resize-handle{width:6px;cursor:col-resize;position:absolute;right:0;top:0;height:100%;display:flex;align-items:center;justify-content:center;color:#ccc;font-size:10px;z-index:10;}
 .col-resize-handle:hover{background:#eee;}
 .todo-side h2{font-size:14px;font-weight:500;color:#1a1a1a;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
-.todo-date-label{font-size:12px;color:#888;font-weight:400;}
 .todo-section{margin-bottom:14px;}
 .todo-section-title{font-size:11px;font-weight:500;color:#888;letter-spacing:.04em;margin-bottom:6px;padding-bottom:4px;border-bottom:0.5px solid #eee;}
 .todo-item{display:flex;align-items:center;gap:5px;padding:5px 6px;border-radius:6px;margin-bottom:2px;}
@@ -127,7 +127,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#f8f7f4;color:#1a1a1
   </div>
   <div class="main-layout">
     <div class="todo-side">
-      <h2>TODO 
+      <h2>TODO
         <input type="date" id="todoDatePicker" style="font-size:12px;color:#888;font-weight:400;border:none;background:transparent;cursor:pointer;outline:none;font-family:inherit;">
         <button id="todayBtn" title="今日に戻る" style="font-size:11px;padding:2px 8px;border-radius:4px;border:0.5px solid #ccc;background:#fff;color:#185FA5;cursor:pointer;font-weight:500;">Today</button>
       </h2>
@@ -135,8 +135,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#f8f7f4;color:#1a1a1
     </div>
     <div class="gantt-side">
       <div class="gantt-wrap">
-        <div class="gantt">
-          <div class="gantt-header">
+        <div class="fixed-cols">
+          <div class="gantt-header-fixed">
             <div class="col-header" id="nameHeader">
               <span>タスク</span>
               <div class="col-resize-handle" id="nameResizeHandle" title="幅を調整">⠿</div>
@@ -145,6 +145,11 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#f8f7f4;color:#1a1a1
               <span>担当者</span>
               <div class="col-resize-handle" id="assigneeResizeHandle" title="幅を調整">⠿</div>
             </div>
+          </div>
+          <div id="fixedRows"></div>
+        </div>
+        <div class="scroll-area">
+          <div class="gantt-header-scroll">
             <div class="date-header" id="dateHeader"></div>
           </div>
           <div id="ganttRows"></div>
@@ -165,11 +170,7 @@ const SB={todo:'#E6F1FB',doing:'#EAF3DE',done:'#F1EFE8'};
 const ST={todo:'#185FA5',doing:'#3B6D11',done:'#5F5E5A'};
 const PRIORITIES=['A','B','C','D',''];
 const today=new Date();today.setHours(0,0,0,0);
-const START=new Date(today);START.setDate(START.getDate()-14);
-
-let NAME_W=200,ASSIGNEE_W=100;
-let tokenClient,accessToken=null,driveFileId=null;
-let saveTimer=null,lastSaved=null;
+const START=new Date(today);
 
 function addD(d,n){const r=new Date(d);r.setDate(r.getDate()+n);return r;}
 function diff(a,b){return Math.round((b-a)/86400000);}
@@ -178,21 +179,15 @@ function colOf(s){const d=new Date(s);d.setHours(0,0,0,0);return Math.max(0,Math
 function fmtDate(s){const d=new Date(s);return(d.getMonth()+1)+'/'+d.getDate()+'('+['日','月','火','水','木','金','土'][d.getDay()]+')';}
 
 const dates=Array.from({length:DAYS},(_,i)=>addD(START,i));
+let NAME_W=200,ASSIGNEE_W=100;
+let tokenClient,accessToken=null,driveFileId=null;
+let saveTimer=null;
 let nid=10,ntodoid=100,collapsed={},selectedDate=iso(today);
-
-let tasks=[];
-let routines=[];
-let todoItems=[];
-let doneMap={};
+let tasks=[],routines=[],todoItems=[],doneMap={};
 
 function defaultData(){
-  tasks=[
-    {id:1,name:'サンプル：調査',start:iso(addD(today,-5)),end:iso(addD(today,2)),status:'doing',parentId:null,dep:null,deadline:false,assignee:''},
-  ];
-  routines=[
-    {id:1,name:'メールチェック・返信',freq:'daily',dow:null,dom:null,priority:''},
-    {id:2,name:'週次レビュー',freq:'weekly',dow:1,dom:null,priority:''},
-  ];
+  tasks=[{id:1,name:'サンプル：調査',start:iso(addD(today,0)),end:iso(addD(today,7)),status:'doing',parentId:null,dep:null,deadline:false,assignee:'',url:''}];
+  routines=[{id:1,name:'メールチェック・返信',freq:'daily',dow:null,dom:null,priority:''},{id:2,name:'週次レビュー',freq:'weekly',dow:1,dom:null,priority:''}];
   todoItems=[];doneMap={};nid=10;ntodoid=100;
 }
 
@@ -206,17 +201,12 @@ function getManualTodosForDate(s){return todoItems.filter(t=>t.date===s);}
 function getRoutinesForDate(s){return routines.filter(r=>isRoutineActive(r,s));}
 function getDoneKey(type,id,date){return type+':'+id+':'+date;}
 
-// Google Drive
 function setSyncStatus(state,msg){
   const el=document.getElementById('syncStatus');
-  el.className='sync-status'+( state==='synced'?' synced':state==='syncing'?' syncing':state==='error'?' error':'');
+  el.className='sync-status'+(state==='synced'?' synced':state==='syncing'?' syncing':state==='error'?' error':'');
   el.textContent='● '+msg;
 }
-
-function serializeData(){
-  return JSON.stringify({tasks,routines,todoItems,doneMap,nid,ntodoid,collapsed,selectedDate},null,2);
-}
-
+function serializeData(){return JSON.stringify({tasks,routines,todoItems,doneMap,nid,ntodoid,collapsed,selectedDate},null,2);}
 function deserializeData(json){
   try{
     const d=JSON.parse(json);
@@ -231,26 +221,17 @@ async function findOrCreateFile(){
   setSyncStatus('syncing','検索中...');
   const res=await fetch(`https://www.googleapis.com/drive/v3/files?q=name='${FILE_NAME}'+and+trashed=false&fields=files(id,name)`,{headers:{Authorization:'Bearer '+accessToken}});
   const data=await res.json();
-  if(data.files&&data.files.length>0){
-    driveFileId=data.files[0].id;
-    await loadFromDrive();
-  } else {
-    await createDriveFile();
-  }
+  if(data.files&&data.files.length>0){driveFileId=data.files[0].id;await loadFromDrive();}
+  else{await createDriveFile();}
 }
-
 async function loadFromDrive(){
   setSyncStatus('syncing','読み込み中...');
   try{
     const res=await fetch(`https://www.googleapis.com/drive/v3/files/${driveFileId}?alt=media`,{headers:{Authorization:'Bearer '+accessToken}});
     const text=await res.text();
-    if(deserializeData(text)){
-      setSyncStatus('synced','Synced');
-      renderAll();
-    }
+    if(deserializeData(text)){setSyncStatus('synced','Synced');renderAll();}
   }catch(e){setSyncStatus('error','Load Failed');}
 }
-
 async function createDriveFile(){
   setSyncStatus('syncing','ファイル作成中...');
   defaultData();
@@ -262,10 +243,9 @@ async function createDriveFile(){
   const res=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',{method:'POST',headers:{Authorization:'Bearer '+accessToken},body:form});
   const data=await res.json();
   driveFileId=data.id;
-  setSyncStatus('synced','Synced（New）');
+  setSyncStatus('synced','Synced (New)');
   renderAll();
 }
-
 async function saveToDrive(){
   if(!driveFileId||!accessToken)return;
   setSyncStatus('syncing','Saving...');
@@ -275,17 +255,11 @@ async function saveToDrive(){
     setSyncStatus('synced','Synced '+new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}));
   }catch(e){setSyncStatus('error','Error');}
 }
+function scheduleSave(){if(saveTimer)clearTimeout(saveTimer);saveTimer=setTimeout(()=>saveToDrive(),2000);}
 
-function scheduleSave(){
-  if(saveTimer)clearTimeout(saveTimer);
-  saveTimer=setTimeout(()=>saveToDrive(),2000);
-}
-
-// Auth
 function initGoogleAuth(){
   tokenClient=google.accounts.oauth2.initTokenClient({
-    client_id:CLIENT_ID,scope:SCOPES,
-    prompt:'',
+    client_id:CLIENT_ID,scope:SCOPES,prompt:'',
     callback:(response)=>{
       if(response.error)return;
       accessToken=response.access_token;
@@ -299,23 +273,17 @@ function initGoogleAuth(){
 }
 
 document.getElementById('loginBtn').onclick=()=>{
-  if(typeof google==='undefined'){alert('Google APIの読み込みに失敗しました。ページを再読み込みしてください。');return;}
+  if(typeof google==='undefined'){alert('Google APIの読み込みに失敗しました。');return;}
   tokenClient.requestAccessToken();
 };
+document.getElementById('forceSaveBtn').onclick=()=>{if(saveTimer)clearTimeout(saveTimer);saveToDrive();};
 
-document.getElementById('forceSaveBtn').onclick=()=>{
-  if(saveTimer)clearTimeout(saveTimer);
-  saveToDrive();
-};
-
-// Render
 function applyColWidths(){
   document.getElementById('nameHeader').style.width=NAME_W+'px';
   document.getElementById('assigneeHeader').style.width=ASSIGNEE_W+'px';
   document.querySelectorAll('.name-col').forEach(el=>el.style.width=NAME_W+'px');
   document.querySelectorAll('.assignee-col').forEach(el=>el.style.width=ASSIGNEE_W+'px');
 }
-
 function setupColResize(handleId,getW,setW,min,max){
   const handle=document.getElementById(handleId);
   let dragging=false,startX=0,startW=0;
@@ -343,7 +311,8 @@ function renderTodo(){
   function makeTodoItem(text,doneKey,priority,type,id,meta,assignee){
     const item=document.createElement('div');const done=!!doneMap[doneKey];
     item.className='todo-item'+(done?' done-item':'');
-    const cb=document.createElement('input');cb.type='checkbox';cb.className='todo-cb';cb.checked=done;cb.onchange=()=>{doneMap[doneKey]=cb.checked;renderTodo();scheduleSave();};
+    const cb=document.createElement('input');cb.type='checkbox';cb.className='todo-cb';cb.checked=done;
+    cb.onchange=()=>{doneMap[doneKey]=cb.checked;renderTodo();scheduleSave();};
     const badge=makePriorityBadge(priority,type,id);
     const body=document.createElement('div');body.className='todo-body';
     const span=document.createElement('span');span.className='todo-text';span.textContent=text;body.appendChild(span);
@@ -353,11 +322,38 @@ function renderTodo(){
     if(type==='manual'){const del=document.createElement('button');del.className='todo-del';del.textContent='✕';del.onclick=()=>{todoItems=todoItems.filter(x=>x.id!==id);renderTodo();scheduleSave();};item.appendChild(del);}
     return item;
   }
-  if(deadlines.length>0){const sec=document.createElement('div');sec.className='todo-section';const t=document.createElement('div');t.className='todo-section-title';t.textContent='締め切り';sec.appendChild(t);deadlines.forEach(task=>sec.appendChild(makeTodoItem('◆ '+task.name,getDoneKey('dl',task.id,selectedDate),task.priority,'task',task.id,'締切',task.assignee)));content.appendChild(sec);}
+
+  if(deadlines.length>0){
+    const sec=document.createElement('div');sec.className='todo-section';
+    const t=document.createElement('div');t.className='todo-section-title';t.textContent='締め切り';sec.appendChild(t);
+    deadlines.forEach(task=>sec.appendChild(makeTodoItem('◆ '+task.name,getDoneKey('dl',task.id,selectedDate),task.priority,'task',task.id,'締切',task.assignee)));
+    content.appendChild(sec);
+  }
   const nonDL=activeTasks.filter(t=>!(t.deadline&&t.end===selectedDate));
-  if(nonDL.length>0){const sec=document.createElement('div');sec.className='todo-section';const t=document.createElement('div');t.className='todo-section-title';t.textContent='進行中のタスク';sec.appendChild(t);nonDL.forEach(task=>{const meta=task.end===selectedDate?'今日まで':'~'+fmtDate(task.end);sec.appendChild(makeTodoItem(task.name,getDoneKey('task',task.id,selectedDate),task.priority,'task',task.id,meta,task.assignee));});content.appendChild(sec);}
-  if(activeRoutines.length>0){const sec=document.createElement('div');sec.className='todo-section';const t=document.createElement('div');t.className='todo-section-title';t.textContent='ルーティン';sec.appendChild(t);const fl={daily:'毎日',weekly:'毎週',monthly:'毎月'};activeRoutines.forEach(r=>{const item=makeTodoItem(r.name,getDoneKey('routine',r.id,selectedDate),r.priority,'routine',r.id,fl[r.freq],'');const editBtn=document.createElement('button');editBtn.className='todo-del';editBtn.textContent='✎';editBtn.style.opacity='0';editBtn.title='編集';editBtn.onclick=()=>openRoutineModal(r.id);const delBtn=document.createElement('button');delBtn.className='todo-del';delBtn.textContent='✕';delBtn.style.opacity='0';delBtn.title='削除';delBtn.onclick=()=>{routines=routines.filter(x=>x.id!==r.id);renderTodo();scheduleSave();};item.append(editBtn,delBtn);item.addEventListener('mouseenter',()=>{editBtn.style.opacity='1';delBtn.style.opacity='1';});item.addEventListener('mouseleave',()=>{editBtn.style.opacity='0';delBtn.style.opacity='0';});sec.appendChild(item);});content.appendChild(sec);}
-  const manualSec=document.createElement('div');manualSec.className='todo-section';const mt=document.createElement('div');mt.className='todo-section-title';mt.textContent='手動追加';manualSec.appendChild(mt);
+  if(nonDL.length>0){
+    const sec=document.createElement('div');sec.className='todo-section';
+    const t=document.createElement('div');t.className='todo-section-title';t.textContent='進行中のタスク';sec.appendChild(t);
+    nonDL.forEach(task=>{const meta=task.end===selectedDate?'今日まで':'~'+fmtDate(task.end);sec.appendChild(makeTodoItem(task.name,getDoneKey('task',task.id,selectedDate),task.priority,'task',task.id,meta,task.assignee));});
+    content.appendChild(sec);
+  }
+  if(activeRoutines.length>0){
+    const sec=document.createElement('div');sec.className='todo-section';
+    const t=document.createElement('div');t.className='todo-section-title';t.textContent='ルーティン';sec.appendChild(t);
+    const fl={daily:'Daily',weekly:'Weekly',monthly:'Monthly'};
+    activeRoutines.forEach(r=>{
+      const item=makeTodoItem(r.name,getDoneKey('routine',r.id,selectedDate),r.priority,'routine',r.id,fl[r.freq],'');
+      const editBtn=document.createElement('button');editBtn.className='todo-del';editBtn.textContent='✎';editBtn.style.opacity='0';editBtn.title='編集';editBtn.onclick=()=>openRoutineModal(r.id);
+      const delBtn=document.createElement('button');delBtn.className='todo-del';delBtn.textContent='✕';delBtn.style.opacity='0';delBtn.title='削除';
+      delBtn.onclick=()=>{routines=routines.filter(x=>x.id!==r.id);renderTodo();scheduleSave();};
+      item.append(editBtn,delBtn);
+      item.addEventListener('mouseenter',()=>{editBtn.style.opacity='1';delBtn.style.opacity='1';});
+      item.addEventListener('mouseleave',()=>{editBtn.style.opacity='0';delBtn.style.opacity='0';});
+      sec.appendChild(item);
+    });
+    content.appendChild(sec);
+  }
+  const manualSec=document.createElement('div');manualSec.className='todo-section';
+  const mt=document.createElement('div');mt.className='todo-section-title';mt.textContent='手動追加';manualSec.appendChild(mt);
   manuals.forEach(m=>manualSec.appendChild(makeTodoItem(m.name,getDoneKey('manual',m.id,selectedDate),m.priority,'manual',m.id,'',m.assignee||'')));
   const addRow=document.createElement('div');addRow.className='todo-add-row';
   const inp=document.createElement('input');inp.placeholder='+ TODO を追加...';inp.id='todoInput';
@@ -369,10 +365,20 @@ function renderTodo(){
 
 function renderHeader(){
   const h=document.getElementById('dateHeader');h.innerHTML='';
-  dates.forEach((d,i)=>{const c=document.createElement('div');c.className='date-cell'+(diff(today,d)===0?' today':'')+(iso(d)===selectedDate?' selected-date':'');c.textContent=(d.getDate()===1||i===0)?(d.getMonth()+1)+'/'+d.getDate():d.getDate();c.onclick=()=>{selectedDate=iso(d);renderHeader();renderRows();renderTodo();scheduleSave();};h.appendChild(c);});
+  dates.forEach((d,i)=>{
+    const c=document.createElement('div');
+    c.className='date-cell'+(diff(today,d)===0?' today':'')+(iso(d)===selectedDate?' selected-date':'');
+    c.textContent=(d.getDate()===1||i===0)?(d.getMonth()+1)+'/'+d.getDate():d.getDate();
+    c.onclick=()=>{selectedDate=iso(d);renderHeader();renderRows();renderTodo();scheduleSave();};
+    h.appendChild(c);
+  });
 }
 
-function parentSpan(pid){const ch=getChildren(pid);const p=getTask(pid);if(!ch.length)return{start:p.start,end:p.end};return{start:iso(new Date(Math.min(...[p,...ch].map(t=>+new Date(t.start))))),end:iso(new Date(Math.max(...[p,...ch].map(t=>+new Date(t.end)))))};}
+function parentSpan(pid){
+  const ch=getChildren(pid);const p=getTask(pid);
+  if(!ch.length)return{start:p.start,end:p.end};
+  return{start:iso(new Date(Math.min(...[p,...ch].map(t=>+new Date(t.start))))),end:iso(new Date(Math.max(...[p,...ch].map(t=>+new Date(t.end)))))};
+}
 
 function makeBar(task,isChild){
   const sc=colOf(task.start),ec=colOf(task.end);
@@ -385,16 +391,32 @@ function makeBar(task,isChild){
   setupBarDrag(bar,task,rh);return bar;
 }
 
-function makeParentBg(pid){const span=parentSpan(pid);const sc=colOf(span.start),ec=colOf(span.end);const bg=document.createElement('div');bg.className='parent-bar-bg';bg.style.left=(sc*COL_W)+'px';bg.style.width=Math.max(COL_W,(ec-sc+1)*COL_W)+'px';bg.style.background='rgba(55,138,221,0.07)';bg.style.border='0.5px dashed rgba(55,138,221,0.3)';return bg;}
+function makeParentBg(pid){
+  const span=parentSpan(pid);const sc=colOf(span.start),ec=colOf(span.end);
+  const bg=document.createElement('div');bg.className='parent-bar-bg';
+  bg.style.left=(sc*COL_W)+'px';bg.style.width=Math.max(COL_W,(ec-sc+1)*COL_W)+'px';
+  bg.style.background='rgba(55,138,221,0.07)';bg.style.border='0.5px dashed rgba(55,138,221,0.3)';return bg;
+}
 
 function renderRows(){
   const container=document.getElementById('ganttRows');container.innerHTML='';
+  const fixedContainer=document.getElementById('fixedRows');fixedContainer.innerHTML='';
   const todayCol=diff(START,today);const selCol=colOf(selectedDate);
-  function makeGridArea(){const g=document.createElement('div');g.className='grid-area';g.style.width=(DAYS*COL_W)+'px';dates.forEach((_,i)=>{const col=document.createElement('div');col.className='grid-col'+(i===todayCol?' today-col':'')+(i===selCol?' sel-col':'');g.appendChild(col);});return g;}
+
+  function makeGridArea(){
+    const g=document.createElement('div');g.className='grid-area';g.style.width=(DAYS*COL_W)+'px';
+    dates.forEach((_,i)=>{const col=document.createElement('div');col.className='grid-col'+(i===todayCol?' today-col':'')+(i===selCol?' sel-col':'');g.appendChild(col);});
+    return g;
+  }
   function makeNameCol(task,isChild){
     const col=document.createElement('div');col.className='name-col';col.style.width=NAME_W+'px';
     if(isChild){const ind=document.createElement('span');ind.className='indent';col.appendChild(ind);const sp=document.createElement('span');sp.className='toggle-placeholder';col.appendChild(sp);}
-    else{const children=getChildren(task.id);const isCollapsed=!!collapsed[task.id];const tb=document.createElement('button');tb.className='toggle-btn'+(isCollapsed?' collapsed':'');tb.innerHTML='&#9660;';if(children.length===0)tb.style.visibility='hidden';tb.onclick=()=>{collapsed[task.id]=!collapsed[task.id];renderRows();scheduleSave();};col.appendChild(tb);}
+    else{
+      const children=getChildren(task.id);const isCollapsed=!!collapsed[task.id];
+      const tb=document.createElement('button');tb.className='toggle-btn'+(isCollapsed?' collapsed':'');tb.innerHTML='&#9660;';
+      if(children.length===0)tb.style.visibility='hidden';
+      tb.onclick=()=>{collapsed[task.id]=!collapsed[task.id];renderRows();scheduleSave();};col.appendChild(tb);
+    }
     const dot=document.createElement('span');dot.className='task-status-dot';dot.style.background=SC[task.status];col.appendChild(dot);
     const nm=document.createElement('span');nm.className='task-name'+(isChild?'':' parent-name');nm.textContent=task.name;nm.title=task.url?task.name+' 🔗':task.name;nm.onclick=()=>openTaskModal(task.id,isChild);col.appendChild(nm);
     if(task.url){const lk=document.createElement('a');lk.href=task.url;lk.target='_blank';lk.style.cssText='font-size:10px;color:#185FA5;text-decoration:none;flex-shrink:0;';lk.textContent='🔗';col.appendChild(lk);}
@@ -404,13 +426,30 @@ function renderRows(){
     const db=document.createElement('button');db.textContent='✕';db.onclick=e=>{e.stopPropagation();deleteTask(task.id);};
     acts.append(eb,db);col.appendChild(acts);return col;
   }
-  function makeAssigneeCol(task){const col=document.createElement('div');col.className='assignee-col';col.style.width=ASSIGNEE_W+'px';const txt=document.createElement('span');txt.className='assignee-text';txt.textContent=task.assignee||'';txt.title=task.assignee||'';col.appendChild(txt);return col;}
+  function makeAssigneeCol(task){
+    const col=document.createElement('div');col.className='assignee-col';col.style.width=ASSIGNEE_W+'px';
+    const txt=document.createElement('span');txt.className='assignee-text';txt.textContent=task.assignee||'';txt.title=task.assignee||'';col.appendChild(txt);return col;
+  }
+  function makeFixedRow(task,isChild){
+    const row=document.createElement('div');
+    row.className='gantt-row'+(isChild?' child-row':'');
+    row.style.minHeight='40px';
+    row.append(makeNameCol(task,isChild),makeAssigneeCol(task));return row;
+  }
+
   getParents().forEach(parent=>{
     const children=getChildren(parent.id);const isCollapsed=!!collapsed[parent.id];
-    const row=document.createElement('div');row.className='gantt-row';
+    const row=document.createElement('div');row.className='gantt-row';row.style.minHeight='40px';
     const g=makeGridArea();if(children.length>0)g.appendChild(makeParentBg(parent.id));g.appendChild(makeBar(parent,false));
-    row.append(makeNameCol(parent,false),makeAssigneeCol(parent),g);container.appendChild(row);
-    if(!isCollapsed){children.forEach(child=>{const crow=document.createElement('div');crow.className='gantt-row child-row';const cg=makeGridArea();cg.appendChild(makeBar(child,true));crow.append(makeNameCol(child,true),makeAssigneeCol(child),cg);container.appendChild(crow);});}
+    row.appendChild(g);container.appendChild(row);
+    fixedContainer.appendChild(makeFixedRow(parent,false));
+    if(!isCollapsed){
+      children.forEach(child=>{
+        const crow=document.createElement('div');crow.className='gantt-row child-row';crow.style.minHeight='40px';
+        const cg=makeGridArea();cg.appendChild(makeBar(child,true));crow.appendChild(cg);container.appendChild(crow);
+        fixedContainer.appendChild(makeFixedRow(child,true));
+      });
+    }
   });
 }
 
@@ -418,7 +457,12 @@ function setupBarDrag(bar,task,handle){
   let dragging=false,resizing=false,startX=0,os=0,oe=0;
   handle.addEventListener('mousedown',e=>{e.stopPropagation();resizing=true;startX=e.clientX;oe=colOf(task.end);document.addEventListener('mousemove',onM);document.addEventListener('mouseup',onU);});
   bar.addEventListener('mousedown',e=>{if(e.target===handle||e.target.classList.contains('deadline-diamond'))return;dragging=true;startX=e.clientX;os=colOf(task.start);oe=colOf(task.end);document.addEventListener('mousemove',onM);document.addEventListener('mouseup',onU);});
-  function onM(e){const dx=Math.round((e.clientX-startX)/COL_W);if(resizing){const ne=Math.max(colOf(task.start),oe+dx);task.end=iso(addD(START,ne));bar.style.width=Math.max(COL_W,(ne-colOf(task.start)+1)*COL_W)+'px';}else if(dragging){const dur=oe-os,ns=os+dx,ne2=ns+dur;if(ns>=0&&ne2<DAYS){task.start=iso(addD(START,ns));task.end=iso(addD(START,ne2));bar.style.left=(ns*COL_W)+'px';}}renderTodo();scheduleSave();}
+  function onM(e){
+    const dx=Math.round((e.clientX-startX)/COL_W);
+    if(resizing){const ne=Math.max(colOf(task.start),oe+dx);task.end=iso(addD(START,ne));bar.style.width=Math.max(COL_W,(ne-colOf(task.start)+1)*COL_W)+'px';}
+    else if(dragging){const dur=oe-os,ns=os+dx,ne2=ns+dur;if(ns>=0&&ne2<DAYS){task.start=iso(addD(START,ns));task.end=iso(addD(START,ne2));bar.style.left=(ns*COL_W)+'px';}}
+    renderTodo();scheduleSave();
+  }
   function onU(){dragging=false;resizing=false;document.removeEventListener('mousemove',onM);document.removeEventListener('mouseup',onU);}
 }
 
@@ -427,36 +471,45 @@ function deleteTask(id){tasks=tasks.filter(t=>t.id!==id);tasks.forEach(t=>{if(t.
 let editingTaskId=null;
 function openTaskModal(id,isChild,parentId){
   editingTaskId=id||null;const mc=document.getElementById('modalContainer');
-  const parents=getParents();const depOpts=tasks.filter(t=>t.id!==id).map(t=>`<option value="${t.id}">${t.name}</option>`).join('');const parentOpts=parents.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
-  let v={name:'',start:iso(today),end:iso(addD(today,5)),status:'todo',dep:'',parentId:parentId||'',deadline:false,assignee:''};
-  if(id){const t=getTask(id);v={name:t.name,start:t.start,end:t.end,status:t.status,dep:t.dep||'',parentId:t.parentId||'',deadline:!!t.deadline,assignee:t.assignee||''};}
+  const parents=getParents();
+  const depOpts=tasks.filter(t=>t.id!==id).map(t=>`<option value="${t.id}">${t.name}</option>`).join('');
+  const parentOpts=parents.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+  let v={name:'',start:iso(today),end:iso(addD(today,5)),status:'todo',dep:'',parentId:parentId||'',deadline:false,assignee:'',url:''};
+  if(id){const t=getTask(id);v={name:t.name,start:t.start,end:t.end,status:t.status,dep:t.dep||'',parentId:t.parentId||'',deadline:!!t.deadline,assignee:t.assignee||'',url:t.url||''};}
   mc.innerHTML=`<div class="modal-overlay" id="mbg"><div class="modal">
     <h3>${id?'タスクを編集':'タスクを追加'}</h3>
     <div class="form-row"><label>タスク名</label><input id="fN" value="${v.name}" placeholder="タスク名"></div>
     <div class="form-row"><label>担当者</label><input id="fA" value="${v.assignee}" placeholder="例：田中 太郎"></div>
-    <div class="form-row"><label>URL（参考リンク）</label><input id="fU" value="${v.url||''}" placeholder="https://..."></div>
+    <div class="form-row"><label>URL（参考リンク）</label><input id="fU" value="${v.url}" placeholder="https://..."></div>
     <div class="form-row"><label>親タスク</label><select id="fP"><option value="">なし（親タスク）</option>${parentOpts}</select></div>
     <div class="form-row"><label>開始日</label><input id="fS" type="date" value="${v.start}"></div>
     <div class="form-row"><label>終了日</label><input id="fE" type="date" value="${v.end}"></div>
     <div class="form-row"><label>ステータス</label><select id="fSt"><option value="todo"${v.status==='todo'?' selected':''}>未着手</option><option value="doing"${v.status==='doing'?' selected':''}>進行中</option><option value="done"${v.status==='done'?' selected':''}>完了</option></select></div>
     <div class="form-row"><label>依存タスク</label><select id="fD"><option value="">なし</option>${depOpts}</select></div>
     <div class="form-row"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" id="fDL"${v.deadline?' checked':''} style="width:auto;"> ◆ 締め切りマークを表示</label></div>
-    <div class="form-actions"><button class="btn" id="fCancel">Cnacel</button><button class="btn primary" id="fSave">Save</button></div>
+    <div class="form-actions"><button class="btn" id="fCancel">Cancel</button><button class="btn primary" id="fSave">Save</button></div>
   </div></div>`;
   document.getElementById('fP').value=v.parentId;document.getElementById('fD').value=v.dep;
-  document.getElementById('mbg').onclick=e=>{if(e.target===e.currentTarget)closeModal();};document.getElementById('fCancel').onclick=closeModal;document.getElementById('fSave').onclick=saveTask;document.getElementById('fN').focus();
+  document.getElementById('mbg').onclick=e=>{if(e.target===e.currentTarget)closeModal();};
+  document.getElementById('fCancel').onclick=closeModal;document.getElementById('fSave').onclick=saveTask;document.getElementById('fN').focus();
 }
 
 function saveTask(){
-  const name=document.getElementById('fN').value.trim();const assignee=document.getElementById('fA').value.trim();const start=document.getElementById('fS').value,end=document.getElementById('fE').value;const status=document.getElementById('fSt').value;const dep=document.getElementById('fD').value?parseInt(document.getElementById('fD').value):null;const parentId=document.getElementById('fP').value?parseInt(document.getElementById('fP').value):null;const deadline=document.getElementById('fDL').checked;
+  const name=document.getElementById('fN').value.trim();const assignee=document.getElementById('fA').value.trim();
+  const start=document.getElementById('fS').value,end=document.getElementById('fE').value;
+  const status=document.getElementById('fSt').value;
+  const dep=document.getElementById('fD').value?parseInt(document.getElementById('fD').value):null;
+  const parentId=document.getElementById('fP').value?parseInt(document.getElementById('fP').value):null;
+  const deadline=document.getElementById('fDL').checked;
   const url=document.getElementById('fU').value.trim();
   if(!name||!start||!end)return;
-  if(editingTaskId){const t=getTask(editingTaskId);Object.assign(t,{name,assignee,url,start,end,status,dep,parentId,deadline});}else tasks.push({id:nid++,name,assignee,url,start,end,status,parentId,dep,deadline});
+  if(editingTaskId){const t=getTask(editingTaskId);Object.assign(t,{name,assignee,url,start,end,status,dep,parentId,deadline});}
+  else tasks.push({id:nid++,name,assignee,url,start,end,status,parentId,dep,deadline});
   closeModal();renderRows();renderTodo();scheduleSave();
 }
 
 function openRoutineModal(id){
-  const mc=document.getElementById('modalContainer');const r=id?routines.find(x=>x.id===id):null;const v=r||{name:'',freq:'daily',dow:1,dom:1};
+  const mc=document.getElementById('modalContainer');const r=id?routines.find(x=>x.id===id):null;const v=r||{name:'',freq:'daily',dow:1,dom:1,priority:''};
   mc.innerHTML=`<div class="modal-overlay" id="mbg"><div class="modal">
     <h3>${r?'ルーティンを編集':'ルーティンを追加'}</h3>
     <div class="form-row"><label>名前</label><input id="rN" value="${v.name}" placeholder="例：週次レビュー"></div>
@@ -468,24 +521,35 @@ function openRoutineModal(id){
   </div></div>`;
   document.getElementById('rF').onchange=function(){document.getElementById('rDowRow').style.display=this.value==='weekly'?'':'none';document.getElementById('rDomRow').style.display=this.value==='monthly'?'':'none';};
   document.getElementById('mbg').onclick=e=>{if(e.target===e.currentTarget)closeModal();};document.getElementById('rCancel').onclick=closeModal;
-  document.getElementById('rSave').onclick=()=>{const name=document.getElementById('rN').value.trim();if(!name)return;const freq=document.getElementById('rF').value;const dow=freq==='weekly'?parseInt(document.getElementById('rDow').value):null;const dom=freq==='monthly'?parseInt(document.getElementById('rDom').value):null;const priority=document.getElementById('rPr').value;if(r)Object.assign(r,{name,freq,dow,dom,priority});else routines.push({id:Date.now(),name,freq,dow,dom,priority});closeModal();renderTodo();scheduleSave();};
+  document.getElementById('rSave').onclick=()=>{
+    const name=document.getElementById('rN').value.trim();if(!name)return;
+    const freq=document.getElementById('rF').value;
+    const dow=freq==='weekly'?parseInt(document.getElementById('rDow').value):null;
+    const dom=freq==='monthly'?parseInt(document.getElementById('rDom').value):null;
+    const priority=document.getElementById('rPr').value;
+    if(r)Object.assign(r,{name,freq,dow,dom,priority});else routines.push({id:Date.now(),name,freq,dow,dom,priority});
+    closeModal();renderTodo();scheduleSave();
+  };
   document.getElementById('rN').focus();
 }
+
 function openRoutineList(){
   const mc=document.getElementById('modalContainer');
   const fl={daily:'毎日',weekly:'毎週',monthly:'毎月'};
   const dow=['日','月','火','水','木','金','土'];
-  const rows=routines.length===0?'<p style="font-size:13px;color:#aaa;text-align:center;padding:1rem 0;">ルーティンがありません</p>':routines.map(r=>{
-    const freq=r.freq==='weekly'?`毎週${dow[r.dow]}曜日`:r.freq==='monthly'?`毎月${r.dom}日`:fl[r.freq];
-    const pri=r.priority?`<span style="font-size:11px;padding:1px 6px;border-radius:4px;background:#E6F1FB;color:#185FA5;border:0.5px solid #85B7EB;">${r.priority}</span>`:'';
-    return `<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:0.5px solid #eee;">
-      ${pri}
-      <span style="flex:1;font-size:13px;color:#1a1a1a;">${r.name}</span>
-      <span style="font-size:11px;color:#aaa;">${freq}</span>
-      <button onclick="openRoutineModal(${r.id});closeModal();" style="background:none;border:none;cursor:pointer;font-size:12px;color:#999;padding:2px 4px;">✎</button>
-      <button onclick="routines=routines.filter(x=>x.id!==${r.id});scheduleSave();openRoutineList();" style="background:none;border:none;cursor:pointer;font-size:12px;color:#999;padding:2px 4px;">✕</button>
-    </div>`;
-  }).join('');
+  const rows=routines.length===0
+    ?'<p style="font-size:13px;color:#aaa;text-align:center;padding:1rem 0;">ルーティンがありません</p>'
+    :routines.map(r=>{
+      const freq=r.freq==='weekly'?`毎週${dow[r.dow]}曜日`:r.freq==='monthly'?`毎月${r.dom}日`:fl[r.freq];
+      const pri=r.priority?`<span style="font-size:11px;padding:1px 6px;border-radius:4px;background:#E6F1FB;color:#185FA5;border:0.5px solid #85B7EB;">${r.priority}</span>`:'';
+      return `<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:0.5px solid #eee;">
+        ${pri}
+        <span style="flex:1;font-size:13px;color:#1a1a1a;">${r.name}</span>
+        <span style="font-size:11px;color:#aaa;">${freq}</span>
+        <button onclick="openRoutineModal(${r.id});closeModal();" style="background:none;border:none;cursor:pointer;font-size:12px;color:#999;padding:2px 4px;">✎</button>
+        <button onclick="routines=routines.filter(x=>x.id!==${r.id});scheduleSave();openRoutineList();" style="background:none;border:none;cursor:pointer;font-size:12px;color:#999;padding:2px 4px;">✕</button>
+      </div>`;
+    }).join('');
   mc.innerHTML=`<div class="modal-overlay" id="mbg"><div class="modal">
     <h3 style="margin-bottom:0.75rem;">ルーティン一覧</h3>
     ${rows}
@@ -495,11 +559,10 @@ function openRoutineList(){
   document.getElementById('rlClose').onclick=closeModal;
   document.getElementById('rlAdd').onclick=()=>{closeModal();openRoutineModal(null);};
 }
+
 function closeModal(){document.getElementById('modalContainer').innerHTML='';}
 
-function renderAll(){
-  applyColWidths();renderHeader();renderRows();renderTodo();
-}
+function renderAll(){applyColWidths();renderHeader();renderRows();renderTodo();}
 
 document.getElementById('todayBtn').onclick=()=>{selectedDate=iso(today);renderHeader();renderRows();renderTodo();};
 document.getElementById('addParentBtn').onclick=()=>openTaskModal(null,false,null);
@@ -518,7 +581,7 @@ window.addEventListener('load',()=>{
       document.getElementById('loginScreen').style.display='none';
       document.getElementById('app').style.display='block';
       findOrCreateFile();
-  } else {
+    } else {
       tokenClient.requestAccessToken({prompt:''});
     }
   } else {
