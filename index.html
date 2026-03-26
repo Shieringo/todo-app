@@ -245,10 +245,10 @@ async function loadFromDrive(){
     const res=await fetch(`https://www.googleapis.com/drive/v3/files/${driveFileId}?alt=media`,{headers:{Authorization:'Bearer '+accessToken}});
     const text=await res.text();
     if(deserializeData(text)){
-      setSyncStatus('synced','同期済み');
+      setSyncStatus('synced','Synced');
       renderAll();
     }
-  }catch(e){setSyncStatus('error','読み込み失敗');}
+  }catch(e){setSyncStatus('error','Load Failed');}
 }
 
 async function createDriveFile(){
@@ -262,18 +262,18 @@ async function createDriveFile(){
   const res=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',{method:'POST',headers:{Authorization:'Bearer '+accessToken},body:form});
   const data=await res.json();
   driveFileId=data.id;
-  setSyncStatus('synced','同期済み（新規）');
+  setSyncStatus('synced','Synced（New）');
   renderAll();
 }
 
 async function saveToDrive(){
   if(!driveFileId||!accessToken)return;
-  setSyncStatus('syncing','保存中...');
+  setSyncStatus('syncing','Saving...');
   try{
     const body=serializeData();
     await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`,{method:'PATCH',headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},body});
-    setSyncStatus('synced','保存済み '+new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}));
-  }catch(e){setSyncStatus('error','保存失敗');}
+    setSyncStatus('synced','Synced '+new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}));
+  }catch(e){setSyncStatus('error','Error');}
 }
 
 function scheduleSave(){
