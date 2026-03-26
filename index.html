@@ -115,6 +115,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#f8f7f4;color:#1a1a1
   <div class="toolbar">
     <button class="btn primary" id="addParentBtn">+ 親タスク</button>
     <button class="btn" id="addRoutineBtn">+ ルーティン</button>
+    <button class="btn" id="listRoutineBtn">一覧</button>
     <div id="syncStatus" class="sync-status">● 未接続</div>
     <button class="btn sm" id="forceSaveBtn" title="今すぐ保存">保存</button>
     <div class="status-legend">
@@ -470,7 +471,29 @@ function openRoutineModal(id){
   document.getElementById('rSave').onclick=()=>{const name=document.getElementById('rN').value.trim();if(!name)return;const freq=document.getElementById('rF').value;const dow=freq==='weekly'?parseInt(document.getElementById('rDow').value):null;const dom=freq==='monthly'?parseInt(document.getElementById('rDom').value):null;const priority=document.getElementById('rPr').value;if(r)Object.assign(r,{name,freq,dow,dom,priority});else routines.push({id:Date.now(),name,freq,dow,dom,priority});closeModal();renderTodo();scheduleSave();};
   document.getElementById('rN').focus();
 }
-
+function openRoutineList(){
+  const mc=document.getElementById('modalContainer');
+  const fl={daily:'毎日',weekly:'毎週',monthly:'毎月'};
+  const dow=['日','月','火','水','木','金','土'];
+  const rows=routines.length===0?'<p style="font-size:13px;color:#aaa;text-align:center;padding:1rem 0;">ルーティンがありません</p>':routines.map(r=>{
+    const freq=r.freq==='weekly'?`毎週${dow[r.dow]}曜日`:r.freq==='monthly'?`毎月${r.dom}日`:fl[r.freq];
+    const pri=r.priority?`<span style="font-size:11px;padding:1px 6px;border-radius:4px;background:#E6F1FB;color:#185FA5;border:0.5px solid #85B7EB;">${r.priority}</span>`:'';
+    return `<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:0.5px solid #eee;">
+      ${pri}
+      <span style="flex:1;font-size:13px;color:#1a1a1a;">${r.name}</span>
+      <span style="font-size:11px;color:#aaa;">${freq}</span>
+      <button onclick="openRoutineModal(${r.id});closeModal();" style="background:none;border:none;cursor:pointer;font-size:12px;color:#999;padding:2px 4px;">✎</button>
+      <button onclick="routines=routines.filter(x=>x.id!==${r.id});scheduleSave();openRoutineList();" style="background:none;border:none;cursor:pointer;font-size:12px;color:#999;padding:2px 4px;">✕</button>
+    </div>`;
+  }).join('');
+  mc.innerHTML=`<div class="modal-overlay" id="mbg"><div class="modal">
+    <h3 style="margin-bottom:0.75rem;">ルーティン一覧</h3>
+    ${rows}
+    <div class="form-actions"><button class="btn" id="rlClose">閉じる</button><button class="btn primary" onclick="openRoutineModal(null);closeModal();">+ 追加</button></div>
+  </div></div>`;
+  document.getElementById('mbg').onclick=e=>{if(e.target===e.currentTarget)closeModal();};
+  document.getElementById('rlClose').onclick=closeModal;
+}
 function closeModal(){document.getElementById('modalContainer').innerHTML='';}
 
 function renderAll(){
@@ -480,6 +503,7 @@ function renderAll(){
 document.getElementById('todayBtn').onclick=()=>{selectedDate=iso(today);renderHeader();renderRows();renderTodo();};
 document.getElementById('addParentBtn').onclick=()=>openTaskModal(null,false,null);
 document.getElementById('addRoutineBtn').onclick=()=>openRoutineModal(null);
+document.getElementById('listRoutineBtn').onclick=()=>openRoutineList();
 setupColResize('nameResizeHandle',()=>NAME_W,w=>{NAME_W=w;},120,360);
 setupColResize('assigneeResizeHandle',()=>ASSIGNEE_W,w=>{ASSIGNEE_W=w;},70,200);
 
