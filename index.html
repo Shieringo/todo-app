@@ -218,6 +218,7 @@ const dates=Array.from({length:DAYS},(_,i)=>addD(START,i));
 let NAME_W=200,ASSIGNEE_W=100;
 let tokenClient,accessToken=null,driveFileId=null;
 let saveTimer=null;
+let pendingSave=false;
 let nid=10,ntodoid=100,collapsed={},selectedDate=iso(today);
 let tasks=[],routines=[],todoItems=[],doneMap={};
 let calEvents=[];
@@ -291,9 +292,21 @@ async function saveToDrive(){
   setSyncStatus('syncing','Saving...');
   try{
     const body=serializeData();
-    await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`,{method:'PATCH',headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},body});
+    const res=await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`,{method:'PATCH',headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},body});
+    if(!res.ok){
+      if(res.status===401){
+        setSyncStatus('syncing','再認証中...');
+        pendingSave=true;
+        tokenClient.requestAccessToken({prompt:''});
+        return;
+      }
+      throw new Error('HTTP '+res.status);
+    }
     setSyncStatus('synced','Synced '+new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}));
-  }catch(e){setSyncStatus('error','Error');}
+  }catch(e){setSyncStatus('error','Error: '+e.message);}
+}
+function scheduleTokenRefresh(){
+  setTimeout(()=>{if(accessToken)tokenClient.requestAccessToken({prompt:''});},50*60*1000);
 }
 function scheduleSave(){if(saveTimer)clearTimeout(saveTimer);saveTimer=setTimeout(()=>saveToDrive(),2000);}
 
@@ -412,9 +425,15 @@ function initGoogleAuth(){
       accessToken=response.access_token;
       localStorage.setItem('gd_access_token',accessToken);
       localStorage.setItem('gd_token_expiry',Date.now()+(3500*1000));
+      if(driveFileId){
+        scheduleTokenRefresh();
+        if(pendingSave){pendingSave=false;saveToDrive();}
+        return;
+      }
       document.getElementById('loginScreen').style.display='none';
       document.getElementById('app').style.display='block';
       findOrCreateFile();
+      scheduleTokenRefresh();
     }
   });
 }
